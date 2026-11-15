@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/flashcard.dart';
 
 class CardController extends ChangeNotifier {
-  List<Flashcard> _cards = [];
+  final List<Flashcard> _cards = [];
   bool _isLoading = false;
 
   List<Flashcard> get cards => _cards;
