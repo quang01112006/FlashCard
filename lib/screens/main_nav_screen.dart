@@ -1,0 +1,66 @@
+import 'package:flutter/material.dart';
+import 'home_screen.dart';
+import 'study_screen.dart';
+import 'manage_cards_screen.dart';
+import 'settings_screen.dart';
+
+class MainNavScreen extends StatefulWidget {
+  const MainNavScreen({super.key});
+
+  @override
+  State<MainNavScreen> createState() => _MainNavScreenState();
+}
+
+class _MainNavScreenState extends State<MainNavScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    StudyScreen(),
+    ManageCardsScreen(),
+    SettingsScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Trang chủ',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school_outlined),
+            activeIcon: Icon(Icons.school),
+            label: 'Học thẻ',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.style_outlined),
+            activeIcon: Icon(Icons.style),
+            label: 'Bộ thẻ',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Cài đặt',
+          ),
+        ],
+      ),
+    );
+  }
+}
