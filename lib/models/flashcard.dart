@@ -1,13 +1,13 @@
 class Flashcard {
   final String id;
-  final String topicCode; // mã các khối kiến thức flutter
-  final String level; // Nhớ, Hiểu, Vận dụng
+  final String topicCode; // Mã các khối kiến thức Flutter (K01–K20)
+  final String level; // Mức độ nhận thức: Nhớ, Hiểu, Vận dụng
   final String front;
   final String back;
-  final String? frontEn; // Song ngữ Anh
-  final String? backEn; // Song ngữ Anh
+  final String? frontEn;
+  final String? backEn;
 
-  // Các trường phục vụ thuật toán SM-2 (mặc định cho thẻ mới)
+  // Các trường phục vụ thuật toán SM-2
   final int repetitions;
   final int interval;
   final double easeFactor;
@@ -59,6 +59,43 @@ class Flashcard {
       interval: interval ?? this.interval,
       easeFactor: easeFactor ?? this.easeFactor,
       nextReviewDate: nextReviewDate ?? this.nextReviewDate,
+    );
+  }
+
+  /// Chuyển đổi sang Map/JSON (Dùng chung cho lưu Hive, xuất file CSV/JSON)
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'topicCode': topicCode,
+      'level': level,
+      'front': front,
+      'back': back,
+      'front_en': frontEn,
+      'back_en': backEn,
+      'repetitions': repetitions,
+      'interval': interval,
+      'easeFactor': easeFactor,
+      'nextReviewDate': nextReviewDate.toIso8601String(),
+    };
+  }
+
+  /// Khởi tạo từ Map/JSON (Hỗ trợ an toàn cả định dạng camelCase và snake_case)
+  factory Flashcard.fromJson(Map<String, dynamic> json) {
+    return Flashcard(
+      id: json['id']?.toString() ?? '',
+      topicCode: json['topicCode']?.toString() ?? '',
+      level: json['level']?.toString() ?? '',
+      front: json['front']?.toString() ?? '',
+      back: json['back']?.toString() ?? '',
+      frontEn: (json['front_en'] ?? json['frontEn'])?.toString(),
+      backEn: (json['back_en'] ?? json['backEn'])?.toString(),
+      repetitions: (json['repetitions'] as num?)?.toInt() ?? 0,
+      interval: (json['interval'] as num?)?.toInt() ?? 0,
+      easeFactor: (json['easeFactor'] as num?)?.toDouble() ?? 2.5,
+      nextReviewDate: json['nextReviewDate'] != null
+          ? DateTime.tryParse(json['nextReviewDate'].toString()) ??
+                DateTime.now()
+          : DateTime.now(),
     );
   }
 }
