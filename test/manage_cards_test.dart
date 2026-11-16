@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flashcard_sm2/controllers/card_controller.dart';
 import 'package:flashcard_sm2/core/app_theme.dart';
 import 'package:flashcard_sm2/screens/manage_cards_screen.dart';
+import 'package:flashcard_sm2/screens/main_nav_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,16 +35,31 @@ Map<String, dynamic> _record({String id = 'K01-001', String? front}) => {
   'back_en': 'Creates a compile-time constant.',
 };
 
-Future<void> _showScreen(WidgetTester tester, CardController controller) {
+Future<void> _showScreen(
+  WidgetTester tester,
+  CardController controller, {
+  Widget home = const ManageCardsScreen(),
+}) {
   return tester.pumpWidget(
     ChangeNotifierProvider.value(
       value: controller,
-      child: MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: const ManageCardsScreen(),
-      ),
+      child: MaterialApp(theme: AppTheme.lightTheme, home: home),
     ),
   );
+}
+
+Future<void> _selectFilter(
+  WidgetTester tester,
+  String field,
+  String option,
+) async {
+  await tester.tap(find.byKey(ValueKey(field)));
+  await tester.pumpAndSettle();
+  final menu = find.byType(Scrollable).last;
+  final choice = find.descendant(of: menu, matching: find.text(option));
+  await tester.scrollUntilVisible(choice, 160, scrollable: menu);
+  await tester.tap(choice);
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -216,10 +232,281 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Câu hỏi cuối danh sách'),
       400,
-      scrollable: find.byType(Scrollable).first,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
 
     expect(find.text('Câu hỏi cuối danh sách'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Gõ để tìm, đổi từ khóa và xóa để khôi phục danh sách', (
+    tester,
+  ) async {
+    final controller = CardController(
+      assetBundle: _TestBundle(
+        () async => jsonEncode([
+          _record(),
+          {
+            ..._record(id: 'K01-002', front: 'Cách dựng giao diện?'),
+            'back': 'Sử dụng Widget.',
+          },
+        ]),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+
+    await tester.enterText(find.byType(TextField), 'k01-002');
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 2 thẻ'), findsOneWidget);
+    expect(find.text('Cách dựng giao diện?'), findsOneWidget);
+    expect(find.text(_record()['front'] as String), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'BIEN DICH');
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 2 thẻ'), findsOneWidget);
+    expect(find.text(_record()['front'] as String), findsOneWidget);
+    expect(find.text('Cách dựng giao diện?'), findsNothing);
+
+    await tester.tap(find.byTooltip('Xóa từ khóa'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 thẻ'), findsOneWidget);
+    expect(find.text('Cách dựng giao diện?'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '',
+    );
+    expect(controller.cards, hasLength(2));
+  });
+
+  testWidgets('Không tìm thấy có nút xóa để quay về toàn bộ thẻ', (
+    tester,
+  ) async {
+    final controller = CardController(
+      assetBundle: _TestBundle(() async => jsonEncode([_record()])),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+
+    await tester.enterText(find.byType(TextField), 'khongtontai987654');
+    await tester.pumpAndSettle();
+    expect(find.text('0 / 1 thẻ'), findsOneWidget);
+    expect(find.text('Không tìm thấy thẻ'), findsOneWidget);
+    expect(find.text('Chưa có thẻ nào'), findsNothing);
+
+    await tester.tap(find.text('Xóa tìm kiếm'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 thẻ'), findsOneWidget);
+    expect(find.text(_record()['front'] as String), findsOneWidget);
+    expect(find.text('Không tìm thấy thẻ'), findsNothing);
+  });
+
+  testWidgets('Tìm khi đang ở cuối danh sách vẫn thấy kết quả và đúng đáp án', (
+    tester,
+  ) async {
+    final controller = CardController(
+      assetBundle: _TestBundle(
+        () async => jsonEncode(
+          List.generate(60, (index) {
+            final id = 'K01-${(index + 1).toString().padLeft(3, '0')}';
+            return {
+              ..._record(id: id, front: 'Câu hỏi số ${index + 1}'),
+              'back': 'Đáp án riêng số ${index + 1}',
+            };
+          }),
+        ),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+    await tester.scrollUntilVisible(
+      find.text('Câu hỏi số 60'),
+      500,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+
+    await tester.enterText(find.byType(TextField), 'K01-001');
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 60 thẻ'), findsOneWidget);
+    await tester.tap(find.text('Câu hỏi số 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đáp án riêng số 1'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'K01-060');
+    await tester.pumpAndSettle();
+    expect(find.text('Đáp án riêng số 1'), findsNothing);
+    await tester.tap(find.text('Câu hỏi số 60'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đáp án riêng số 60'), findsOneWidget);
+    expect(controller.cards, hasLength(60));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Áp dụng đồng thời hai bộ lọc và tìm kiếm trên dữ liệu thật', (
+    tester,
+  ) async {
+    final controller = CardController();
+    addTearDown(controller.dispose);
+    await tester.runAsync(controller.loadDefaultCards);
+    await _showScreen(tester, controller);
+
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K01');
+    await _selectFilter(tester, 'manage_filter_level', 'Nhớ');
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+
+    final expectedCount = controller.cards
+        .where((card) => card.topicCode == 'K01' && card.level == 'Nhớ')
+        .length;
+    expect(find.text('$expectedCount / 300 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc (2)'), findsOneWidget);
+    expect(find.text('K01 • Nhớ'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'K01-001');
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 300 thẻ'), findsOneWidget);
+    await tester.tap(find.byTooltip('Xóa từ khóa'));
+    await tester.pumpAndSettle();
+    expect(find.text('$expectedCount / 300 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc (2)'), findsOneWidget);
+    expect(controller.cards, hasLength(300));
+  });
+
+  testWidgets('Bộ lọc chỉ thay đổi khi áp dụng; đặt lại giữ từ khóa', (
+    tester,
+  ) async {
+    final controller = CardController();
+    addTearDown(controller.dispose);
+    await tester.runAsync(controller.loadDefaultCards);
+    await _showScreen(tester, controller);
+
+    await tester.enterText(find.byType(TextField), 'K01');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K20');
+    // Đóng bảng mà chưa áp dụng không được đổi bộ lọc của danh sách.
+    Navigator.of(tester.element(find.text('Lọc bộ thẻ'))).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('20 / 300 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc'), findsOneWidget);
+
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K01');
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ lọc (1)'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<DropdownButton<String>>(
+            find.byKey(const ValueKey('manage_filter_topic')),
+          )
+          .value,
+      'K01',
+    );
+    await tester.tap(find.text('Đặt lại'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bộ lọc'), findsOneWidget);
+    expect(find.text('20 / 300 thẻ'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'K01',
+    );
+  });
+
+  testWidgets('Không có kết quả kết hợp có thể xóa mọi điều kiện', (
+    tester,
+  ) async {
+    final controller = CardController();
+    addTearDown(controller.dispose);
+    await tester.runAsync(controller.loadDefaultCards);
+    await _showScreen(tester, controller);
+    await tester.enterText(find.byType(TextField), 'K01-001');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K20');
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 / 300 thẻ'), findsOneWidget);
+    expect(find.text('Không tìm thấy thẻ'), findsOneWidget);
+    await tester.tap(find.text('Xóa tìm kiếm và bộ lọc'));
+    await tester.pumpAndSettle();
+    expect(find.text('300 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '',
+    );
+  });
+
+  testWidgets('Giữ bộ lọc khi chuyển tab rồi quay lại', (tester) async {
+    final controller = CardController();
+    addTearDown(controller.dispose);
+    await tester.runAsync(controller.loadDefaultCards);
+    await _showScreen(tester, controller, home: const MainNavScreen());
+    await tester.tap(find.text('Bộ thẻ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K20');
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cài đặt'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ thẻ').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('8 / 300 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc (1)'), findsOneWidget);
+  });
+
+  testWidgets('Lọc và xóa lọc trên màn hình hẹp với cỡ chữ lớn', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final controller = CardController(
+      assetBundle: _TestBundle(() async => jsonEncode([_record()])),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_level', 'Vận dụng');
+    await tester.ensureVisible(find.text('Áp dụng'));
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+    expect(find.text('0 / 1 thẻ'), findsOneWidget);
+    await tester.ensureVisible(find.text('Xóa bộ lọc'));
+    await tester.tap(find.text('Xóa bộ lọc'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 thẻ'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
