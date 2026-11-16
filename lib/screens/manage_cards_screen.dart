@@ -90,7 +90,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         title: 'Chưa tải được bộ thẻ',
         message: controller.loadError!,
         actionLabel: 'Thử lại',
-        onAction: controller.loadDefaultCards,
+        onAction: () => controller.loadDefaultCards(forceReload: true),
       );
     }
 
@@ -101,7 +101,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         title: 'Chưa có thẻ nào',
         message: 'Bạn có thể tải lại để kiểm tra dữ liệu bộ thẻ.',
         actionLabel: 'Tải lại',
-        onAction: controller.loadDefaultCards,
+        onAction: () => controller.loadDefaultCards(forceReload: true),
       );
     }
 

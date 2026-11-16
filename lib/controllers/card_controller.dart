@@ -14,20 +14,40 @@ class CardController extends ChangeNotifier {
   bool _isLoading = false;
   String? _loadError;
 
+  // Trạng thái đa ngôn ngữ dùng chung toàn app (Mặc định: Tiếng Việt)
+  bool _isEnglish = false;
+
+  // Trạng thái giao diện Tối / Sáng dùng chung toàn app
+  bool _isDarkMode = false;
+
   List<Flashcard> get cards => _cards;
   bool get isLoading => _isLoading;
   String? get loadError => _loadError;
+  bool get isEnglish => _isEnglish;
+  bool get isDarkMode => _isDarkMode;
 
-  /// Danh sách thẻ cần ôn hôm nay
+  /// Danh sách thẻ cần ôn hôm nay (SM-2 isDueToday)
   List<Flashcard> get dueCards => _cards.where((c) => c.isDueToday).toList();
 
   /// Số lượng thẻ cần ôn hôm nay (để hiển thị ở Trang chủ)
   int get dueCount => dueCards.length;
 
-  /// Nạp dữ liệu đóng gói để các tab có thể hiển thị thẻ khi chưa nối Hive.
+  /// Danh sách các mã khối kiến thức duy nhất (K01, K02...) có trong hệ thống
+  List<String> get allTopics {
+    final topics = _cards
+        .map((c) => c.topicCode)
+        .where((t) => t.isNotEmpty)
+        .toSet()
+        .toList();
+    topics.sort();
+    return topics;
+  }
+
+  /// Nạp dữ liệu 300 câu hỏi môn học từ assets/default_cards.json
+  /// Không nạp đè thẻ đang có trừ khi yêu cầu tải lại rõ ràng.
   /// Member Data / Storage sẽ bổ sung đọc dữ liệu đã lưu trước bước này.
-  Future<void> loadDefaultCards() async {
-    if (_isLoading) return;
+  Future<void> loadDefaultCards({bool forceReload = false}) async {
+    if (_isLoading || (_cards.isNotEmpty && !forceReload)) return;
 
     _isLoading = true;
     _loadError = null;
@@ -56,50 +76,75 @@ class CardController extends ChangeNotifier {
         if (!ids.add(id)) {
           throw const FormatException('Duplicate flashcard ID.');
         }
-        return Flashcard(
-          id: id,
-          topicCode: entry['topicCode'] as String? ?? '',
-          level: entry['level'] as String? ?? '',
-          front: entry['front'] as String,
-          back: entry['back'] as String,
-          frontEn: entry['front_en'] as String?,
-          backEn: entry['back_en'] as String?,
-        );
+        return Flashcard.fromJson(entry);
       }).toList();
 
       // Chỉ thay danh sách sau khi toàn bộ dữ liệu đã được đọc hợp lệ.
       _cards
         ..clear()
         ..addAll(loadedCards);
-    } catch (_) {
+    } catch (e) {
       _loadError = 'Không thể tải bộ thẻ. Vui lòng thử lại.';
+      debugPrint('Lỗi nạp default_cards.json: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// TODO [Member phụ trách Quản lý thẻ]:
-  /// Viết code thêm thẻ mới vào _cards và lưu trữ
+  /// TODO [Người 2 phụ trách Trang chủ & Lọc thẻ]:
+  /// Viết logic lọc danh sách thẻ theo mã khối kiến thức (K01–K20)
+  List<Flashcard> getCardsByTopic(String topicCode) {
+    // TODO: Người 2 điền code lọc danh sách thẻ ở đây
+    return [];
+  }
+
+  /// TODO [Người 4 phụ trách Cài đặt]:
+  /// Viết logic khôi phục toàn bộ dữ liệu thẻ về trạng thái 300 câu hỏi gốc ban đầu
+  Future<void> resetAllCards() async {
+    // TODO: Người 4 điền code reset ở đây
+  }
+
+  /// Cập nhật ngôn ngữ (Người 4 gọi ở Tab Cài đặt)
+  void setLanguage(bool isEnglish) {
+    if (_isEnglish != isEnglish) {
+      _isEnglish = isEnglish;
+      notifyListeners(); // Thông báo để toàn bộ app tự đổi ngôn ngữ
+    }
+  }
+
+  /// Cập nhật Dark Mode (Người 4 gọi ở Tab Cài đặt)
+  void setDarkMode(bool isDarkMode) {
+    if (_isDarkMode != isDarkMode) {
+      _isDarkMode = isDarkMode;
+      notifyListeners(); // Thông báo để toàn bộ app đổi theme
+    }
+  }
+
+  /// TODO [Người 3 phụ trách Quản lý thẻ]:
+  /// Viết logic thêm thẻ mới vào hệ thống
   void addCard(Flashcard card) {
-    // Viết code thêm thẻ và gọi notifyListeners() ở đây...
+    // TODO: Người 3 điền code thêm thẻ ở đây
   }
 
-  /// TODO [Member phụ trách Quản lý thẻ]:
-  /// Viết code xóa thẻ theo id
+  /// TODO [Người 3 phụ trách Quản lý thẻ]:
+  /// Viết logic xóa thẻ theo id khỏi hệ thống
   void deleteCard(String id) {
-    // Viết code xóa thẻ và gọi notifyListeners() ở đây...
+    // TODO: Người 3 điền code xóa thẻ ở đây
   }
 
-  /// TODO [Member phụ trách Màn hình Học]:
-  /// Viết code cập nhật thông tin thẻ sau khi chấm điểm SM-2 (repetitions, interval, easeFactor...)
+  /// Cập nhật thẻ sau khi chấm điểm SM-2 (Leader gọi ở Tab Học thẻ)
   void updateCard(Flashcard updatedCard) {
-    // Viết code cập nhật thẻ và gọi notifyListeners() ở đây...
+    final index = _cards.indexWhere((c) => c.id == updatedCard.id);
+    if (index != -1) {
+      _cards[index] = updatedCard;
+      notifyListeners();
+    }
   }
 
-  /// TODO [Member phụ trách CSV]:
-  /// Viết code nhận danh sách thẻ đã parse từ file CSV và thêm vào _cards
+  /// TODO [Người 3 phụ trách Quản lý thẻ]:
+  /// Viết logic nạp danh sách thẻ từ file CSV hoặc AI
   void importCards(List<Flashcard> newCards) {
-    // Viết code import thẻ và gọi notifyListeners() ở đây...
+    // TODO: Người 3 điền code import thẻ ở đây
   }
 }

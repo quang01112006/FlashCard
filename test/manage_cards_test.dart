@@ -106,6 +106,80 @@ void main() {
     expect(controller.isLoading, isFalse);
   });
 
+  test(
+    'Nạp mặc định không ghi đè thẻ đã học; tải lại chỉ khi yêu cầu',
+    () async {
+      var reads = 0;
+      final controller = CardController(
+        assetBundle: _TestBundle(() async {
+          reads++;
+          return jsonEncode([_record()]);
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.loadDefaultCards();
+      final reviewed = controller.cards.single.copyWith(
+        repetitions: 3,
+        interval: 15,
+        easeFactor: 2.1,
+        nextReviewDate: DateTime(2099, 1, 1),
+      );
+      controller.updateCard(reviewed);
+      await controller.loadDefaultCards();
+
+      expect(reads, 1);
+      expect(controller.cards.single, same(reviewed));
+      expect(controller.dueCount, 0);
+
+      await controller.loadDefaultCards(forceReload: true);
+      expect(reads, 2);
+      expect(controller.cards.single.repetitions, 0);
+    },
+  );
+
+  test(
+    'Dùng model chung để nạp song ngữ camelCase và lịch ôn đã lưu',
+    () async {
+      final reviewDate = DateTime.utc(2030, 1, 15);
+      final controller = CardController(
+        assetBundle: _TestBundle(
+          () async => jsonEncode([
+            {
+              ..._record(),
+              'topicCode': 'K20',
+              'front_en': null,
+              'back_en': null,
+              'frontEn': 'Question in English',
+              'backEn': 'Answer in English',
+              'repetitions': 4,
+              'interval': 30,
+              'easeFactor': 2.3,
+              'nextReviewDate': reviewDate.toIso8601String(),
+            },
+            _record(id: 'K01-002'),
+          ]),
+        ),
+      );
+      addTearDown(controller.dispose);
+      await controller.loadDefaultCards();
+
+      final restored = controller.cards.first;
+      expect(controller.loadError, isNull);
+      expect(restored.frontEn, 'Question in English');
+      expect(restored.backEn, 'Answer in English');
+      expect(restored.repetitions, 4);
+      expect(restored.interval, 30);
+      expect(restored.easeFactor, 2.3);
+      expect(restored.nextReviewDate, reviewDate);
+      expect(controller.allTopics, ['K01', 'K20']);
+
+      controller.setLanguage(true);
+      controller.setDarkMode(true);
+      expect(controller.isEnglish, isTrue);
+      expect(controller.isDarkMode, isTrue);
+    },
+  );
+
   for (final invalid in <String, dynamic>{
     'JSON sai cú pháp': 'invalid json',
     'JSON không phải danh sách': '{}',
@@ -123,7 +197,7 @@ void main() {
       final original = controller.cards.single;
 
       content = invalid.value as String;
-      await controller.loadDefaultCards();
+      await controller.loadDefaultCards(forceReload: true);
 
       expect(controller.loadError, isNotNull);
       expect(controller.isLoading, isFalse);
