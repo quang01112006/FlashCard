@@ -58,18 +58,16 @@ class CardController extends ChangeNotifier {
   }
 
   /// TODO [Người 2 phụ trách Trang chủ & Lọc thẻ]:
-  /// Lọc danh sách thẻ theo mã khối kiến thức (K01–K20)
+  /// Viết logic lọc danh sách thẻ theo mã khối kiến thức (K01–K20)
   List<Flashcard> getCardsByTopic(String topicCode) {
-    if (topicCode.isEmpty) return _cards;
-    return _cards.where((c) => c.topicCode == topicCode).toList();
+    // TODO: Người 2 điền code lọc danh sách thẻ ở đây
+    return [];
   }
 
   /// TODO [Người 4 phụ trách Cài đặt]:
-  /// Khôi phục toàn bộ dữ liệu thẻ về trạng thái 300 câu hỏi gốc ban đầu
+  /// Viết logic khôi phục toàn bộ dữ liệu thẻ về trạng thái 300 câu hỏi gốc ban đầu
   Future<void> resetAllCards() async {
-    _cards.clear();
-    await loadDefaultCards();
-    notifyListeners();
+    // TODO: Người 4 điền code reset ở đây
   }
 
   /// Cập nhật ngôn ngữ (Người 4 gọi ở Tab Cài đặt)
@@ -88,16 +86,16 @@ class CardController extends ChangeNotifier {
     }
   }
 
-  /// Thêm thẻ mới (Người 3 gọi ở Tab Quản lý thẻ)
+  /// TODO [Người 3 phụ trách Quản lý thẻ]:
+  /// Viết logic thêm thẻ mới vào hệ thống
   void addCard(Flashcard card) {
-    _cards.insert(0, card);
-    notifyListeners();
+    // TODO: Người 3 điền code thêm thẻ ở đây
   }
 
-  /// Xóa thẻ theo id (Người 3 gọi ở Tab Quản lý thẻ)
+  /// TODO [Người 3 phụ trách Quản lý thẻ]:
+  /// Viết logic xóa thẻ theo id khỏi hệ thống
   void deleteCard(String id) {
-    _cards.removeWhere((c) => c.id == id);
-    notifyListeners();
+    // TODO: Người 3 điền code xóa thẻ ở đây
   }
 
   /// Cập nhật thẻ sau khi chấm điểm SM-2 (Leader gọi ở Tab Học thẻ)
@@ -109,9 +107,9 @@ class CardController extends ChangeNotifier {
     }
   }
 
-  /// Nhập danh sách thẻ từ CSV (Người 3 gọi khi Import CSV)
+  /// TODO [Người 3 phụ trách Quản lý thẻ]:
+  /// Viết logic nạp danh sách thẻ từ file CSV hoặc AI
   void importCards(List<Flashcard> newCards) {
-    _cards.addAll(newCards);
-    notifyListeners();
+    // TODO: Người 3 điền code import thẻ ở đây
   }
 }
