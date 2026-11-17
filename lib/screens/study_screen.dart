@@ -10,7 +10,9 @@ import '../widgets/flip_card_widget.dart';
 import '../services/manage_card_store.dart';
 
 class StudyScreen extends StatefulWidget {
-  const StudyScreen({super.key});
+  final String? topicCode; // Tuỳ chọn: truyền mã chủ đề (ví dụ 'K01') để chỉ học riêng chủ đề đó
+
+  const StudyScreen({super.key, this.topicCode});
 
   @override
   State<StudyScreen> createState() => _StudyScreenState();
@@ -26,17 +28,49 @@ class _StudyScreenState extends State<StudyScreen> {
   GlobalKey<FlipCardWidgetState> _flipCardKey =
       GlobalKey<FlipCardWidgetState>();
 
+  // Lưu lại trạng thái của thẻ trước khi đánh giá để hỗ trợ tính năng Hoàn tác (Undo) chuẩn Anki
+  Flashcard? _lastRatedCard;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final controller = context.watch<CardController>();
-    final availableCards = controller.dueCards.isNotEmpty
-        ? controller.dueCards
-        : controller.cards;
+    _syncSession(context.watch<CardController>());
+  }
 
+  @override
+  void didUpdateWidget(covariant StudyScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.topicCode != widget.topicCode) {
+      _sessionCards = [];
+      _currentIndex = 0;
+      _isSessionInitialized = false;
+      _lastRatedCard = null;
+      _syncSession(context.read<CardController>());
+      _isAnswerRevealed = false;
+      _flipCardKey = GlobalKey<FlipCardWidgetState>();
+    }
+  }
+
+  void _syncSession(CardController controller) {
     final previousCurrentId = _currentIndex < _sessionCards.length
         ? _sessionCards[_currentIndex].id
         : null;
+    // Lọc chủ đề trước khi chọn thẻ đến hạn để không bị ảnh hưởng bởi chủ đề khác.
+    final topicCards = controller.cards
+        .where(
+          (card) =>
+              widget.topicCode == null ||
+              widget.topicCode!.isEmpty ||
+              card.topicCode == widget.topicCode,
+        )
+        .toList();
+    final dueCards = topicCards.where((card) => card.isDueToday).toList();
+    final availableCards = dueCards.isNotEmpty ? dueCards : topicCards;
+    final live = {for (final card in topicCards) card.id: card};
+    if (_lastRatedCard != null && !live.containsKey(_lastRatedCard!.id)) {
+      _lastRatedCard = null;
+    }
+
     if (availableCards.isNotEmpty) {
       if (!_isSessionInitialized || _sessionCards.isEmpty) {
         _sessionCards = List.from(availableCards);
@@ -44,7 +78,6 @@ class _StudyScreenState extends State<StudyScreen> {
         _isSessionInitialized = true;
       } else {
         // Đồng bộ nội dung và bỏ thẻ đã xóa, giữ các thẻ đã học trong phiên.
-        final live = {for (final card in controller.cards) card.id: card};
         final knownIds = _sessionCards.map((card) => card.id).toSet();
         final completed = _sessionCards
             .take(_currentIndex)
@@ -78,16 +111,11 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   void _restartSession() {
-    final controller = context.read<CardController>();
-    final availableCards = controller.dueCards.isNotEmpty
-        ? controller.dueCards
-        : controller.cards;
-
     setState(() {
-      _sessionCards = List.from(availableCards);
       _currentIndex = 0;
       _isAnswerRevealed = false;
       _flipCardKey = GlobalKey<FlipCardWidgetState>();
+      _lastRatedCard = null;
     });
   }
 
@@ -97,6 +125,40 @@ class _StudyScreenState extends State<StudyScreen> {
       setState(() {
         _isAnswerRevealed = true;
       });
+    }
+  }
+
+  /// Hoàn tác câu vừa đánh giá
+  Future<void> _undoLastRating() async {
+    final controller = context.read<CardController>();
+    final cardToRestore = _lastRatedCard;
+    if (cardToRestore == null || _isRating || controller.isSaving) return;
+    setState(() => _isRating = true);
+    try {
+      // Controller chỉ khôi phục SM-2, giữ nội dung mới nhất từ tab Bộ thẻ.
+      await controller.updateCard(cardToRestore);
+      if (!mounted) return;
+      final index = _sessionCards.indexWhere(
+        (card) => card.id == cardToRestore.id,
+      );
+      if (index < 0) return;
+      setState(() {
+        _currentIndex = index;
+        _isAnswerRevealed = false;
+        _flipCardKey = GlobalKey<FlipCardWidgetState>();
+        _lastRatedCard = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã hoàn tác câu vừa đánh giá'),
+          duration: Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (mounted) _showSaveError(error);
+    } finally {
+      if (mounted) setState(() => _isRating = false);
     }
   }
 
@@ -128,24 +190,31 @@ class _StudyScreenState extends State<StudyScreen> {
         (card) => card.id == currentCard.id,
       );
       setState(() {
-        if (index >= 0) _currentIndex = index + 1;
+        if (index >= 0) {
+          _lastRatedCard = currentCard;
+          _currentIndex = index + 1;
+        }
         _isAnswerRevealed = false;
         _flipCardKey = GlobalKey<FlipCardWidgetState>();
       });
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error is CardOperationException
-                ? error.message
-                : 'Không thể lưu kết quả ôn tập. Vui lòng thử lại.',
-          ),
-        ),
-      );
+      _showSaveError(error);
     } finally {
       if (mounted) setState(() => _isRating = false);
     }
+  }
+
+  void _showSaveError(Object error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error is CardOperationException
+              ? error.message
+              : 'Không thể lưu kết quả ôn tập. Vui lòng thử lại.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -173,8 +242,21 @@ class _StudyScreenState extends State<StudyScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.inbox_outlined, size: 72, color: theme.hintColor),
-                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.style_outlined,
+                    size: 64,
+                    color: isDark ? const Color(0xFF818CF8) : AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
                 const Text(
                   'Chưa có thẻ nào trong phiên học!',
                   style: AppTextStyles.subHeading,
@@ -195,7 +277,19 @@ class _StudyScreenState extends State<StudyScreen> {
     // Trạng thái 2: Đã hoàn thành hết số thẻ trong phiên
     if (_currentIndex >= _sessionCards.length) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Hoàn thành phiên học')),
+        appBar: AppBar(
+          title: const Text('Hoàn thành phiên học'),
+          actions: [
+            if (_lastRatedCard != null)
+              IconButton(
+                icon: const Icon(Icons.undo),
+                tooltip: 'Hoàn tác câu vừa đánh giá',
+                onPressed: _isRating || controller.isSaving
+                    ? null
+                    : _undoLastRating,
+              ),
+          ],
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -232,7 +326,9 @@ class _StudyScreenState extends State<StudyScreen> {
                     foregroundColor: Colors.white,
                     minimumSize: const Size(200, 50),
                   ),
-                  onPressed: _restartSession,
+                  onPressed: _isRating || controller.isSaving
+                      ? null
+                      : _restartSession,
                   icon: const Icon(Icons.replay),
                   label: const Text('Ôn tập lại từ đầu'),
                 ),
@@ -257,6 +353,16 @@ class _StudyScreenState extends State<StudyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Thẻ ${_currentIndex + 1} / ${_sessionCards.length}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: 'Hoàn tác câu vừa đánh giá',
+            onPressed:
+                _lastRatedCard != null && !_isRating && !controller.isSaving
+                ? _undoLastRating
+                : null,
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
