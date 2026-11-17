@@ -39,7 +39,7 @@ void main() {
     }
   });
 
-  test('78 khối code có cùng ngôn ngữ và nội dung ở hai bản Việt–Anh', () {
+  test('80 khối code câu hỏi có cùng ngôn ngữ và nội dung Việt–Anh', () {
     final languageCounts = <String, int>{};
     for (final record in records) {
       final vi = blocks.allMatches(record['front'] as String).toList();
@@ -61,7 +61,7 @@ void main() {
       }
     }
     expect(languageCounts, {
-      'dart': 65,
+      'dart': 67,
       'text': 3,
       'yaml': 6,
       'json': 1,
@@ -88,7 +88,7 @@ void main() {
       blocks.firstMatch(card['front_en'] as String)!.group(2),
       originalCode,
     );
-    expect(card['back'], startsWith('Đáp án A: `meow generic`\n\nGiải thích:'));
+    expect(card['back'], startsWith('`meow generic`\n\nGiải thích:'));
   });
 
   test('Tìm kiếm dữ liệu thật vẫn khớp qua các đoạn được định dạng', () {
@@ -96,12 +96,15 @@ void main() {
     expect(
       ManageCardSearch.search(
         cards,
-        'khai bao void greet',
+        'void greet(String name',
       ).map((card) => card.id),
       contains('K01-002'),
     );
     expect(
-      ManageCardSearch.search(cards, 'dap an c: const').map((card) => card.id),
+      ManageCardSearch.search(
+        cards,
+        'const giai thich:',
+      ).map((card) => card.id),
       contains('K01-001'),
     );
     expect(
@@ -112,4 +115,33 @@ void main() {
       contains('K17-008'),
     );
   });
+
+  test(
+    'Đáp án theo mẫu mới giữ giải thích, code song ngữ và nguồn tham khảo',
+    () {
+      var answerBlocks = 0;
+      final oldLabel = RegExp(r'^(Đáp án|Answer) [ABCD]:');
+      for (final record in records) {
+        expect(oldLabel.hasMatch(record['back'] as String), isFalse);
+        expect(oldLabel.hasMatch(record['back_en'] as String), isFalse);
+        expect(record['back'], contains('Giải thích:'));
+        expect(record['back_en'], contains('Explanation:'));
+        final source = Uri.parse(record['source'] as String);
+        expect(source.scheme, 'https');
+        expect(source.host, isNotEmpty);
+        final vi = blocks.allMatches(record['back'] as String).toList();
+        final en = blocks.allMatches(record['back_en'] as String).toList();
+        expect(en.length, vi.length, reason: record['id'] as String);
+        for (var index = 0; index < vi.length; index++) {
+          expect(
+            en[index].group(2),
+            vi[index].group(2),
+            reason: record['id'] as String,
+          );
+          answerBlocks++;
+        }
+      }
+      expect(answerBlocks, 9);
+    },
+  );
 }

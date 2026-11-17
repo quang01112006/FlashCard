@@ -861,6 +861,59 @@ void main() {
     },
   );
 
+  testWidgets('Học và chấm điểm ở màn hình mới giữ dữ liệu và bộ lọc Bộ thẻ', (
+    tester,
+  ) async {
+    final controller = CardController(
+      assetBundle: _TestBundle(
+        () async => jsonEncode([
+          _record(),
+          {
+            ..._record(id: 'K02-001', front: 'Câu hỏi tiếp theo'),
+            'topicCode': 'K02',
+          },
+        ]),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    controller.setLanguage(true);
+    await _showScreen(tester, controller, home: const MainNavScreen());
+    await tester.tap(find.text('Bộ thẻ'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'K01-001');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K01');
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Học thẻ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hiện đáp án'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tốt'));
+    await tester.pumpAndSettle();
+
+    final reviewed = controller.cards.firstWhere(
+      (card) => card.id == 'K01-001',
+    );
+    expect(reviewed.repetitions, 1);
+    expect(reviewed.interval, 1);
+    expect(controller.cards, hasLength(2));
+    await tester.tap(find.text('Bộ thẻ'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 2 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc (1)'), findsOneWidget);
+    expect(find.text('What does const do?'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'K01-001',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Lọc và xóa lọc trên màn hình hẹp với cỡ chữ lớn', (
     tester,
   ) async {
