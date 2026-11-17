@@ -6,6 +6,7 @@ import '../controllers/card_controller.dart';
 import '../core/app_theme.dart';
 import '../models/flashcard.dart';
 import '../services/csv_service.dart';
+import '../services/ai_card_service.dart';
 import '../services/manage_csv_files.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
@@ -13,11 +14,12 @@ import '../widgets/code_text_view.dart';
 import '../widgets/manage_card_filters_sheet.dart';
 import '../widgets/manage_delete_card_dialog.dart';
 import 'manage_card_editor_screen.dart';
+import 'manage_ai_screen.dart';
 import 'manage_csv_mapping_screen.dart';
 import '../widgets/manage_deck_action_dialog.dart';
 import 'study_screen.dart';
 
-enum _CsvAction { import, export }
+enum _CsvAction { import, export, demoAi }
 
 class ManageCardsScreen extends StatefulWidget {
   const ManageCardsScreen({
@@ -25,11 +27,13 @@ class ManageCardsScreen extends StatefulWidget {
     this.csvFiles,
     this.deckId,
     this.onStudyDeck,
+    this.aiService = const WorkerAiCardService(),
   });
   final ValueChanged<String>? onStudyDeck;
   final String? deckId;
 
   final ManageCsvFiles? csvFiles;
+  final AiCardService aiService;
 
   @override
   State<ManageCardsScreen> createState() => _ManageCardsScreenState();
@@ -163,6 +167,23 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   Future<void> _handleCsv(_CsvAction action) async {
     final controller = context.read<CardController>();
     if (_csvBusy || controller.isSaving) return;
+    if (action == _CsvAction.demoAi) {
+      final deckId = widget.deckId;
+      if (deckId == null || controller.deckById(deckId) == null) return;
+      final count = await Navigator.push<int>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ManageAiScreen(deckId: deckId, service: widget.aiService),
+        ),
+      );
+      if (!mounted || count == null) return;
+      _recentCardId = null;
+      _resetSearchAndFilters();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Đã lưu $count thẻ.')));
+      return;
+    }
     FocusScope.of(context).unfocus();
     ScaffoldMessenger.of(context).clearSnackBars();
     setState(() {
@@ -311,6 +332,11 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
               icon: const Icon(Icons.import_export),
               onSelected: _handleCsv,
               itemBuilder: (_) => [
+                if (widget.deckId != null)
+                  const PopupMenuItem(
+                    value: _CsvAction.demoAi,
+                    child: Text('Tạo thẻ AI'),
+                  ),
                 const PopupMenuItem(
                   value: _CsvAction.import,
                   child: Text('Nhập CSV'),
