@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 
 /// Bảng màu chuẩn dùng chung cho toàn bộ dự án
 class AppColors {
-  static const primary = Color(0xFF2563EB); // Xanh dương chủ đạo
-  static const primaryLight = Color(0xFFDBEAFE);
-  static const secondary = Color(0xFF10B981); // Xanh lá (nút Dễ / Hoàn thành)
+  static const primary = Color(0xFF4F46E5); // Tím chàm
+  static const primaryLight = Color(0xFFEEF2FF); // tím chàm nhạt
+  static const secondary = Color(0xFF10B981); // Xanh ngọc (nút Dễ / Hoàn thành)
   static const warning = Color(0xFFF59E0B); // Vàng cam (nút Khó)
   static const danger = Color(0xFFEF4444); // Đỏ (nút Học lại)
 
-  static const background = Color(0xFFF8FAFC); // Nền xám nhạt hiện đại
+  static const background = Color(0xFFF8FAFC); // xám nhạt
   static const surface = Colors.white;
   static const textPrimary = Color(0xFF1E293B);
   static const textSecondary = Color(0xFF64748B);
   static const border = Color(0xFFE2E8F0);
 }
 
-/// Kiểu chữ (Typography) chuẩn
+/// Kiểu chữ
 class AppTextStyles {
   static const heading = TextStyle(
     fontSize: 22,
@@ -29,10 +29,7 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  static const body = TextStyle(
-    fontSize: 15,
-    color: AppColors.textPrimary,
-  );
+  static const body = TextStyle(fontSize: 15, color: AppColors.textPrimary);
 
   static const caption = TextStyle(
     fontSize: 13,
