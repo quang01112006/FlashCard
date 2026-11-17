@@ -8,8 +8,10 @@ class ManageCardFiltersSheet extends StatefulWidget {
     super.key,
     required this.initialFilter,
     this.topics = const [],
+    this.includeFlutterTopics = true,
   });
   final List<String> topics;
+  final bool includeFlutterTopics;
 
   final ManageCardFilter initialFilter;
 
@@ -39,7 +41,7 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
               allLabel: 'Tất cả chủ đề',
               selected: _topicCode,
               options: {
-                ...ManageCardFilter.topicCodes,
+                if (widget.includeFlutterTopics) ...ManageCardFilter.topicCodes,
                 ...widget.topics,
                 ?_topicCode,
               }.toList()..sort(),

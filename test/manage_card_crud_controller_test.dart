@@ -137,7 +137,7 @@ void main() {
       for (final invalid in [
         _card('seed'),
         _card('new', front: '  '),
-        _card('new').copyWith(topicCode: '  '),
+        _card('new').copyWith(deckId: 'missing-deck'),
         _card('new').copyWith(level: ''),
       ]) {
         await expectLater(

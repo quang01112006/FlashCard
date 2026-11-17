@@ -14,6 +14,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'support/manage_card_test_store.dart';
+import 'support/manage_deck_test_store.dart';
+
+import 'package:flashcard_sm2/models/card_deck.dart';
 
 class _Files implements ManageCsvFiles {
   ManageCsvFile? file;
@@ -53,14 +56,15 @@ Flashcard _card(String id) => Flashcard(
 Future<void> _show(
   WidgetTester tester,
   CardController controller,
-  _Files files,
-) async {
+  _Files files, {
+  String? deckId,
+}) async {
   await tester.pumpWidget(
     ChangeNotifierProvider.value(
       value: controller,
       child: MaterialApp(
         theme: AppTheme.lightTheme,
-        home: ManageCardsScreen(csvFiles: files),
+        home: ManageCardsScreen(csvFiles: files, deckId: deckId),
       ),
     ),
   );
@@ -118,6 +122,44 @@ void main() {
     files = _Files();
   });
   tearDown(() => controller.dispose());
+
+  testWidgets(
+    'CSV chỉ xuất bộ đang mở, nhập lại vào đúng bộ và bỏ qua deckId trong file',
+    (tester) async {
+      controller.dispose();
+      final multi = MemoryDeckTestStore()
+        ..decks = [
+          const CardDeck(id: 'flutter-default', name: 'Học Flutter'),
+          const CardDeck(id: 'cooking', name: 'Nấu ăn'),
+        ]
+        ..savedCards = [
+          _card('flutter'),
+          _card('recipe').copyWith(deckId: 'cooking'),
+        ];
+      store = multi;
+      controller = CardController(store: multi);
+      await controller.loadDefaultCards();
+      await _show(tester, controller, files, deckId: 'cooking');
+      expect(find.text('Nấu ăn'), findsOneWidget);
+      expect(find.text('Câu hỏi flutter'), findsNothing);
+      await _choose(tester, 'Xuất CSV');
+      await tester.tap(find.text('Chọn nơi lưu'));
+      await tester.pump();
+      await _settleCsv(tester);
+      expect(
+        CsvService.parseBytes(files.exported!).cards.single.front,
+        'Câu hỏi recipe',
+      );
+      files.file = _file('front,back,deckId\nImported,Answer,flutter-default');
+      await _choose(tester, 'Nhập CSV');
+      await tester.tap(_confirm);
+      await tester.pumpAndSettle();
+      expect(controller.cardsInDeck('cooking'), hasLength(2));
+      expect(controller.cardsInDeck('flutter-default').single.id, 'flutter');
+      expect(controller.cards.first.deckId, 'cooking');
+      expect(controller.cards.first.topicCode, '');
+    },
+  );
 
   testWidgets(
     'Sửa riêng từng thẻ trước khi nhập giữ mặc định cho thẻ còn lại',

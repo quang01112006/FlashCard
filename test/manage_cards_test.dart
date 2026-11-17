@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flashcard_sm2/controllers/card_controller.dart';
 import 'package:flashcard_sm2/core/app_theme.dart';
 import 'package:flashcard_sm2/screens/manage_cards_screen.dart';
-import 'package:flashcard_sm2/screens/main_nav_screen.dart';
+import 'package:flashcard_sm2/screens/study_screen.dart';
 import 'package:flashcard_sm2/widgets/code_text_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +12,39 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'support/manage_card_test_store.dart';
+
+// Kiểm tra các màn cũ độc lập; tab sản phẩm nay mở danh sách bộ thẻ.
+class _LegacyTabs extends StatefulWidget {
+  const _LegacyTabs();
+  @override
+  State<_LegacyTabs> createState() => _LegacyTabsState();
+}
+
+class _LegacyTabsState extends State<_LegacyTabs> {
+  int index = 0;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: IndexedStack(
+      index: index,
+      children: const [
+        SizedBox(),
+        StudyScreen(),
+        ManageCardsScreen(),
+        SizedBox(),
+      ],
+    ),
+    bottomNavigationBar: BottomNavigationBar(
+      currentIndex: index,
+      onTap: (value) => setState(() => index = value),
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+        BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Học thẻ'),
+        BottomNavigationBarItem(icon: Icon(Icons.style), label: 'Bộ thẻ'),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Cài đặt'),
+      ],
+    ),
+  );
+}
 
 CardController _controller({AssetBundle? assetBundle}) =>
     CardController(assetBundle: assetBundle, store: MemoryManageCardStore());
@@ -228,7 +261,7 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('1 thẻ'), findsOneWidget);
-    expect(find.text('K01-001 • K01 • Nhớ'), findsOneWidget);
+    expect(find.text('K01 • Nhớ'), findsOneWidget);
   });
 
   testWidgets('Chạm thẻ mở và đóng đáp án', (tester) async {
@@ -602,7 +635,7 @@ void main() {
         .length;
     expect(find.text('$expectedCount / 300 thẻ'), findsOneWidget);
     expect(find.text('Bộ lọc (2)'), findsOneWidget);
-    expect(find.text('K01 • Nhớ'), findsOneWidget);
+    expect(find.text('K01 • Nhớ'), findsWidgets);
 
     await tester.enterText(find.byType(TextField), 'K01-001');
     await tester.pumpAndSettle();
@@ -691,7 +724,7 @@ void main() {
     final controller = _controller();
     addTearDown(controller.dispose);
     await tester.runAsync(controller.loadDefaultCards);
-    await _showScreen(tester, controller, home: const MainNavScreen());
+    await _showScreen(tester, controller, home: const _LegacyTabs());
     await tester.tap(find.text('Bộ thẻ'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bộ lọc'));
@@ -817,7 +850,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 / 2 thẻ'), findsOneWidget);
     expect(find.text('Bộ lọc (2)'), findsOneWidget);
-    expect(find.text('K01 • Nhớ'), findsOneWidget);
+    expect(find.text('K01 • Nhớ'), findsWidgets);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       'tu khoa',
@@ -886,7 +919,7 @@ void main() {
     addTearDown(controller.dispose);
     await controller.loadDefaultCards();
     controller.setLanguage(true);
-    await _showScreen(tester, controller, home: const MainNavScreen());
+    await _showScreen(tester, controller, home: const _LegacyTabs());
     await tester.tap(find.text('Bộ thẻ'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'K01-001');

@@ -14,11 +14,20 @@ import '../widgets/manage_card_filters_sheet.dart';
 import '../widgets/manage_delete_card_dialog.dart';
 import 'manage_card_editor_screen.dart';
 import 'manage_csv_mapping_screen.dart';
+import '../widgets/manage_deck_action_dialog.dart';
+import 'study_screen.dart';
 
 enum _CsvAction { import, export }
 
 class ManageCardsScreen extends StatefulWidget {
-  const ManageCardsScreen({super.key, this.csvFiles});
+  const ManageCardsScreen({
+    super.key,
+    this.csvFiles,
+    this.deckId,
+    this.onStudyDeck,
+  });
+  final ValueChanged<String>? onStudyDeck;
+  final String? deckId;
 
   final ManageCsvFiles? csvFiles;
 
@@ -36,6 +45,25 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   bool _csvProcessing = false;
   late final ManageCsvFiles _csvFiles =
       widget.csvFiles ?? NativeManageCsvFiles();
+
+  List<Flashcard> _cards(CardController controller) => widget.deckId == null
+      ? controller.cards
+      : controller.cardsInDeck(widget.deckId!);
+
+  Future<void> _moveCard(Flashcard card) async {
+    final deck = context.read<CardController>().deckById(card.deckId);
+    if (deck == null) return;
+    final moved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ManageDeckActionDialog(deck: deck, card: card),
+    );
+    if (mounted && moved == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã chuyển thẻ sang bộ khác.')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -65,7 +93,11 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       useSafeArea: true,
       builder: (_) => ManageCardFiltersSheet(
         initialFilter: _filter,
-        topics: context.read<CardController>().allTopics,
+        topics: widget.deckId == null
+            ? context.read<CardController>().allTopics
+            : context.read<CardController>().topicsInDeck(widget.deckId!),
+        includeFlutterTopics:
+            widget.deckId == null || widget.deckId == 'flutter-default',
       ),
     );
     if (!mounted || selected == null) return;
@@ -92,6 +124,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       MaterialPageRoute(
         builder: (_) => ManageCardEditorScreen(
           initialCard: card,
+          deckId: widget.deckId,
           topicCode: _filter.topicCode,
           level: _filter.level,
         ),
@@ -150,6 +183,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
               table: table,
               topicCode: _filter.topicCode,
               level: _filter.level,
+              deckId: widget.deckId,
             ),
           ),
         );
@@ -160,7 +194,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
             .showSnackBar(SnackBar(content: Text('Đã nhập $count thẻ.')));
       } else {
         // Xuất toàn bộ bộ thẻ, kể cả khi danh sách đang tìm kiếm hoặc lọc.
-        final cards = List<Flashcard>.of(controller.cards);
+        final cards = List<Flashcard>.of(_cards(controller));
         if (cards.isEmpty) return;
         final confirmed = await showDialog<bool>(
           context: context,
@@ -226,9 +260,38 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bộ thẻ'),
+        title: Text(
+          widget.deckId == null
+              ? 'Bộ thẻ'
+              : controller.deckById(widget.deckId!)?.name ??
+                    'Bộ thẻ không còn tồn tại',
+        ),
         actions: [
-          if (!controller.isLoading && controller.loadError == null)
+          if (widget.deckId != null &&
+              controller.deckById(widget.deckId!) != null)
+            IconButton(
+              key: const ValueKey('manage_study_this_deck'),
+              tooltip: 'Học bộ này',
+              icon: const Icon(Icons.school_outlined),
+              onPressed: controller.isSaving || controller.isLoading || _csvBusy
+                  ? null
+                  : () {
+                      if (widget.onStudyDeck != null) {
+                        widget.onStudyDeck!(widget.deckId!);
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StudyScreen(deckId: widget.deckId!),
+                          ),
+                        );
+                      }
+                    },
+            ),
+          if (!controller.isLoading &&
+              controller.loadError == null &&
+              (widget.deckId == null ||
+                  controller.deckById(widget.deckId!) != null))
             IconButton(
               key: const ValueKey('manage_add_card'),
               tooltip: 'Thêm thẻ',
@@ -237,7 +300,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                   : () => _openEditor(),
               icon: const Icon(Icons.add),
             ),
-          if (!controller.isLoading && controller.loadError == null)
+          if (!controller.isLoading &&
+              controller.loadError == null &&
+              (widget.deckId == null ||
+                  controller.deckById(widget.deckId!) != null))
             PopupMenuButton<_CsvAction>(
               key: const ValueKey('manage_csv_menu'),
               tooltip: 'Nhập / xuất CSV',
@@ -251,7 +317,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                 ),
                 PopupMenuItem(
                   value: _CsvAction.export,
-                  enabled: controller.cards.isNotEmpty,
+                  enabled: _cards(controller).isNotEmpty,
                   child: const Text('Xuất CSV'),
                 ),
               ],
@@ -298,7 +364,12 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       );
     }
 
-    final cards = controller.cards;
+    if (widget.deckId != null && controller.deckById(widget.deckId!) == null) {
+      return const Center(
+        child: Text('Bộ thẻ đã được xóa. Hãy quay lại danh sách bộ.'),
+      );
+    }
+    final cards = _cards(controller);
     if (cards.isEmpty) {
       return _ManageCardsMessage(
         icon: Icons.style_outlined,
@@ -420,6 +491,13 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                     onEdit: controller.isSaving || _csvBusy
                         ? null
                         : () => _openEditor(results[index]),
+                    onMove:
+                        widget.deckId != null &&
+                            !controller.isSaving &&
+                            !_csvBusy &&
+                            controller.decks.length > 1
+                        ? () => _moveCard(results[index])
+                        : null,
                     onDelete: controller.isSaving || _csvBusy
                         ? null
                         : () => _deleteCard(results[index]),
@@ -439,6 +517,7 @@ class _ManageCardItem extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.highlighted = false,
+    this.onMove,
   });
 
   final Flashcard card;
@@ -446,6 +525,7 @@ class _ManageCardItem extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final bool highlighted;
+  final VoidCallback? onMove;
 
   String _textForLanguage(String vietnamese, String? english) {
     return isEnglish && english != null && english.trim().isNotEmpty
@@ -482,7 +562,6 @@ class _ManageCardItem extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8),
           child: Text(
             [
-              card.id,
               card.topicCode,
               card.level,
             ].where((value) => value.isNotEmpty).join(' • '),
@@ -508,6 +587,12 @@ class _ManageCardItem extends StatelessWidget {
             spacing: 8,
             alignment: WrapAlignment.end,
             children: [
+              if (onMove != null)
+                TextButton.icon(
+                  onPressed: onMove,
+                  icon: const Icon(Icons.drive_file_move_outline),
+                  label: const Text('Chuyển bộ'),
+                ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(48, 48),

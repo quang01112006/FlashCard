@@ -12,7 +12,12 @@ import '../services/manage_card_store.dart';
 class StudyScreen extends StatefulWidget {
   final String? topicCode; // Tuỳ chọn: truyền mã chủ đề (ví dụ 'K01') để chỉ học riêng chủ đề đó
 
-  const StudyScreen({super.key, this.topicCode});
+  const StudyScreen({
+    super.key,
+    this.topicCode,
+    this.deckId = 'flutter-default',
+  });
+  final String deckId;
 
   @override
   State<StudyScreen> createState() => _StudyScreenState();
@@ -41,7 +46,8 @@ class _StudyScreenState extends State<StudyScreen> {
   @override
   void didUpdateWidget(covariant StudyScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.topicCode != widget.topicCode) {
+    if (oldWidget.topicCode != widget.topicCode ||
+        oldWidget.deckId != widget.deckId) {
       _sessionCards = [];
       _currentIndex = 0;
       _isSessionInitialized = false;
@@ -57,7 +63,8 @@ class _StudyScreenState extends State<StudyScreen> {
         ? _sessionCards[_currentIndex].id
         : null;
     // Lọc chủ đề trước khi chọn thẻ đến hạn để không bị ảnh hưởng bởi chủ đề khác.
-    final topicCards = controller.cards
+    final topicCards = controller
+        .cardsInDeck(widget.deckId)
         .where(
           (card) =>
               widget.topicCode == null ||
@@ -288,6 +295,31 @@ class _StudyScreenState extends State<StudyScreen> {
     );
   }
 
+  Widget _title(String text) {
+    final deck = context.read<CardController>().deckById(widget.deckId);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          deck?.name ?? 'Bộ thẻ đã xóa',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 14),
+        ),
+        Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ],
+    );
+  }
+
+  Widget _scrollableMessage(Widget child) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: Center(child: child),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -299,7 +331,7 @@ class _StudyScreenState extends State<StudyScreen> {
     if (controller.isLoading && _sessionCards.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Học thẻ SM-2'),
+          title: _title('Học thẻ SM-2'),
           actions: _sessionActions(controller),
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -310,11 +342,11 @@ class _StudyScreenState extends State<StudyScreen> {
     if (_sessionCards.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Học thẻ SM-2'),
+          title: _title('Học thẻ SM-2'),
           actions: _sessionActions(controller),
         ),
-        body: Center(
-          child: Padding(
+        body: _scrollableMessage(
+          Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -355,11 +387,11 @@ class _StudyScreenState extends State<StudyScreen> {
     if (_currentIndex >= _sessionCards.length) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Hoàn thành phiên học'),
+          title: _title('Hoàn thành phiên học'),
           actions: _sessionActions(controller),
         ),
-        body: Center(
-          child: Padding(
+        body: _scrollableMessage(
+          Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -424,7 +456,7 @@ class _StudyScreenState extends State<StudyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Thẻ ${_currentIndex + 1} / ${_sessionCards.length}'),
+        title: _title('Thẻ ${_currentIndex + 1} / ${_sessionCards.length}'),
         actions: _sessionActions(controller),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
@@ -730,9 +762,6 @@ class _StudyScreenState extends State<StudyScreen> {
     required Color backgroundColor,
     required Color borderColor,
   }) {
-    final hasTopic = card.topicCode.isNotEmpty;
-    final hasLevel = card.level.isNotEmpty;
-
     return Card(
       margin: EdgeInsets.zero,
       color: backgroundColor,
@@ -742,124 +771,120 @@ class _StudyScreenState extends State<StudyScreen> {
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: borderColor, width: 1.5),
       ),
-      child: Container(
-        width: double.infinity,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          children: [
-            // Header bên trong thẻ
-            Row(
-              children: [
-                if (hasTopic || hasLevel)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (hasTopic)
-                          Text(
-                            card.topicCode,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        if (hasTopic && hasLevel)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '•',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        if (hasLevel)
-                          Text(
-                            card.level,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                      ],
-                    ),
-                  )
-                else
-                  const SizedBox.shrink(),
-
-                const Spacer(),
-
-                // Tag định danh CÂU HỎI hoặc ĐÁP ÁN
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tagColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            key: PageStorageKey(
+              'study_content_${card.id}_${isBack ? 'back' : 'front'}',
+            ),
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      Icon(
-                        isBack
-                            ? Icons.check_circle_outline
-                            : Icons.help_outline,
-                        size: 13,
-                        color: tagColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        tag,
-                        style: TextStyle(
-                          color: tagColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                          letterSpacing: 0.3,
+                      if (card.topicCode.isNotEmpty || card.level.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text.rich(
+                            TextSpan(
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                              children: [
+                                if (card.topicCode.isNotEmpty)
+                                  TextSpan(
+                                    text: card.topicCode,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                if (card.topicCode.isNotEmpty &&
+                                    card.level.isNotEmpty)
+                                  const TextSpan(text: ' • '),
+                                TextSpan(text: card.level),
+                              ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tagColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text.rich(
+                          TextSpan(
+                            style: TextStyle(
+                              color: tagColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              letterSpacing: 0.3,
+                            ),
+                            children: [
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Icon(
+                                  isBack
+                                      ? Icons.check_circle_outline
+                                      : Icons.help_outline,
+                                  size: 13,
+                                  color: tagColor,
+                                ),
+                              ),
+                              TextSpan(
+                                text:
+                                    ' ${MediaQuery.textScalerOf(context).scale(11) > 16 ? (isBack ? 'ĐÁP ÁN' : 'CÂU HỎI') : tag}',
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Nội dung câu hỏi/đáp án
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: CodeTextView(text: content, textAlign: TextAlign.left),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: CodeTextView(
+                      text: content,
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                  Text(
+                    hint,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 8),
-            // Gợi ý nhỏ ở chân thẻ
-            Text(
-              hint,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -11,11 +11,13 @@ class ManageCsvMappingScreen extends StatefulWidget {
     required this.table,
     this.topicCode,
     this.level,
+    this.deckId,
   });
   final String fileName;
   final CsvTable table;
   final String? topicCode;
   final String? level;
+  final String? deckId;
   @override
   State<ManageCsvMappingScreen> createState() => _ManageCsvMappingScreenState();
 }
@@ -63,6 +65,7 @@ class _ManageCsvMappingScreenState extends State<ManageCsvMappingScreen> {
             result: result,
             topicCode: widget.topicCode,
             level: widget.level,
+            deckId: widget.deckId,
           ),
         ),
       );

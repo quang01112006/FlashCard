@@ -18,12 +18,14 @@ class ManageCsvImportScreen extends StatefulWidget {
     required this.result,
     this.topicCode,
     this.level,
+    this.deckId,
   });
 
   final String fileName;
   final CsvImportResult result;
   final String? topicCode;
   final String? level;
+  final String? deckId;
 
   @override
   State<ManageCsvImportScreen> createState() => _ManageCsvImportScreenState();
@@ -33,7 +35,11 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
   static final _codeBlocks = RegExp(r'```[\s\S]*?```');
   static final _inlineCode = RegExp(r'`([^`]+)`');
   static final _whitespace = RegExp(r'\s+');
-  late String _topic = widget.topicCode ?? 'K01';
+  late String _topic =
+      widget.topicCode ??
+      (widget.deckId == null || widget.deckId == 'flutter-default'
+          ? 'K01'
+          : '');
   late String _level = widget.level ?? 'Nhớ';
   late final List<CsvCardDraft> _drafts = List.of(widget.result.cards);
   bool _saving = false;
@@ -50,11 +56,13 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
     try {
       final cards = _drafts
           .map(
-            (draft) => draft.toCard(
-              id: controller.createCardId(),
-              defaultTopic: _topic,
-              defaultLevel: _level,
-            ),
+            (draft) => draft
+                .toCard(
+                  id: controller.createCardId(),
+                  defaultTopic: _topic,
+                  defaultLevel: _level,
+                )
+                .copyWith(deckId: widget.deckId ?? 'flutter-default'),
           )
           .toList();
       await controller.importCards(cards);
@@ -81,6 +89,7 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
       MaterialPageRoute(
         builder: (_) => ManageCardEditorScreen(
           draftOnly: true,
+          deckId: widget.deckId,
           initialCard: original.toCard(
             id: 'preview-$index',
             defaultTopic: _topic,
@@ -155,7 +164,15 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                           ManageTopicField(
                             key: const ValueKey('manage_csv_topic'),
                             value: _topic,
-                            topics: context.read<CardController>().allTopics,
+                            topics: widget.deckId == null
+                                ? context.read<CardController>().allTopics
+                                : context.read<CardController>().topicsInDeck(
+                                    widget.deckId!,
+                                  ),
+                            required: false,
+                            includeFlutterTopics:
+                                widget.deckId == null ||
+                                widget.deckId == 'flutter-default',
                             enabled: !busy,
                             label: 'Chủ đề mặc định',
                             onChanged: (value) =>

@@ -11,18 +11,26 @@ class ManageTopicField extends StatelessWidget {
     this.topics = const [],
     this.enabled = true,
     this.label = 'Chủ đề',
+    this.required = true,
+    this.includeFlutterTopics = true,
   });
   final String value;
   final ValueChanged<String> onChanged;
   final List<String> topics;
   final bool enabled;
   final String label;
+  final bool required;
+  final bool includeFlutterTopics;
 
   @override
   Widget build(BuildContext context) => Autocomplete<String>(
     initialValue: TextEditingValue(text: value),
     optionsBuilder: (input) =>
-        {...ManageCardFilter.topicCodes, ...topics, value}.where(
+        {
+          if (includeFlutterTopics) ...ManageCardFilter.topicCodes,
+          ...topics,
+          value,
+        }.where(
           (topic) =>
               topic.isNotEmpty &&
               topic.toLowerCase().contains(input.text.toLowerCase()),
@@ -38,8 +46,9 @@ class ManageTopicField extends StatelessWidget {
         border: const OutlineInputBorder(),
       ),
       onChanged: (text) => onChanged(text.trim()),
-      validator: (text) =>
-          text == null || text.trim().isEmpty ? 'Vui lòng nhập chủ đề.' : null,
+      validator: (text) => required && (text == null || text.trim().isEmpty)
+          ? 'Vui lòng nhập chủ đề.'
+          : null,
     ),
   );
 }

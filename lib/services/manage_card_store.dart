@@ -1,6 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/flashcard.dart';
+import '../models/card_deck.dart';
+import 'manage_deck_store.dart';
 
 /// Có thể thay bằng lớp lưu trữ chung của nhóm qua constructor CardController.
 abstract interface class ManageCardStore {
@@ -9,7 +11,7 @@ abstract interface class ManageCardStore {
   Future<void> write(List<Flashcard> cards);
 }
 
-class HiveManageCardStore implements ManageCardStore {
+class HiveManageCardStore implements ManageCardStore, ManageDeckStore {
   HiveManageCardStore({Future<Box<dynamic>> Function()? openBox})
     : _openBox = openBox ?? _openDefaultBox;
 
@@ -38,10 +40,55 @@ class HiveManageCardStore implements ManageCardStore {
     final box = await _getBox();
     final value = box.get(_deckKey);
     if (value == null) return null;
-    if (value is! Map || value['version'] != 1) {
+    if (value is! Map || (value['version'] != 1 && value['version'] != 2)) {
       throw const FormatException('Unsupported saved deck.');
     }
     return decodeManageCards(value['cards']);
+  }
+
+  @override
+  Future<DeckCollection?> readCollection() async {
+    final value = (await _getBox()).get(_deckKey);
+    if (value == null || (value is Map && value['version'] == 1)) return null;
+    if (value is! Map || value['version'] != 2 || value['decks'] is! List) {
+      throw const FormatException('Unsupported deck collection');
+    }
+    if (value['cards'] is! List ||
+        (value['cards'] as List).any(
+          (card) =>
+              card is! Map ||
+              card['deckId'] is! String ||
+              (card['deckId'] as String).trim().isEmpty,
+        )) {
+      throw const FormatException('Missing deck reference');
+    }
+    final collection = DeckCollection(
+      decks: (value['decks'] as List).map(
+        (entry) => CardDeck.fromJson(Map<String, dynamic>.from(entry)),
+      ),
+      cards: decodeManageCards(value['cards']),
+    );
+    collection.validate();
+    return collection;
+  }
+
+  @override
+  Future<void> writeCollection(DeckCollection collection) async {
+    collection.validate();
+    final records = collection.cards.map((card) => card.toJson()).toList();
+    decodeManageCards(records);
+    final box = await _getBox();
+    final old = box.get(_deckKey);
+    if (old is Map &&
+        old['version'] == 1 &&
+        !box.containsKey('deck_v1_backup')) {
+      await box.put('deck_v1_backup', old);
+    }
+    await box.put(_deckKey, {
+      'version': 2,
+      'decks': collection.decks.map((deck) => deck.toJson()).toList(),
+      'cards': records,
+    });
   }
 
   @override
@@ -50,7 +97,14 @@ class HiveManageCardStore implements ManageCardStore {
     decodeManageCards(records);
     final box = await _getBox();
     // Một bản ghi duy nhất để không lưu dở dang giữa nhiều thẻ.
-    await box.put(_deckKey, {'version': 1, 'cards': records});
+    final collection = await readCollection();
+    if (collection != null) {
+      await writeCollection(
+        DeckCollection(decks: collection.decks, cards: cards),
+      );
+    } else {
+      await box.put(_deckKey, {'version': 1, 'cards': records});
+    }
   }
 }
 

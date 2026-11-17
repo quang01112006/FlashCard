@@ -30,7 +30,10 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
       _error = null;
     });
     try {
-      await widget.controller.deleteCard(widget.card.id);
+      await widget.controller.deleteCard(
+        widget.card.id,
+        expectedDeckId: widget.card.deckId,
+      );
       if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;

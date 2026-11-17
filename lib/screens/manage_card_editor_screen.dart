@@ -15,12 +15,14 @@ class ManageCardEditorScreen extends StatefulWidget {
     this.topicCode,
     this.level,
     this.draftOnly = false,
+    this.deckId,
   });
 
   final Flashcard? initialCard;
   final String? topicCode;
   final String? level;
   final bool draftOnly;
+  final String? deckId;
 
   @override
   State<ManageCardEditorScreen> createState() => _ManageCardEditorScreenState();
@@ -48,7 +50,12 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
     _back = TextEditingController(text: card?.back ?? '');
     _frontEn = TextEditingController(text: card?.frontEn ?? '');
     _backEn = TextEditingController(text: card?.backEn ?? '');
-    _topicCode = card?.topicCode ?? widget.topicCode ?? 'K01';
+    _topicCode =
+        card?.topicCode ??
+        widget.topicCode ??
+        (widget.deckId == null || widget.deckId == 'flutter-default'
+            ? 'K01'
+            : '');
     _level = card?.level ?? widget.level ?? 'Nhớ';
   }
 
@@ -107,6 +114,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
       final initial = widget.initialCard;
       final draft = Flashcard(
         id: initial?.id ?? controller.createCardId(),
+        deckId: initial?.deckId ?? widget.deckId ?? 'flutter-default',
         topicCode: _topicCode,
         level: _level,
         front: _front.text,
@@ -121,7 +129,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
       }
       final saved = initial == null
           ? await controller.addCard(draft)
-          : await controller.editCard(draft);
+          : await controller.editCard(draft, expectedDeckId: widget.deckId);
       if (!mounted) return;
       _allowPop = true;
       Navigator.of(context).pop(saved.id);
@@ -177,7 +185,16 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                         ManageTopicField(
                           key: const ValueKey('manage_editor_topic'),
                           value: _topicCode,
-                          topics: context.read<CardController>().allTopics,
+                          topics: widget.deckId == null
+                              ? context.read<CardController>().allTopics
+                              : context.read<CardController>().topicsInDeck(
+                                  widget.deckId!,
+                                ),
+                          required: false,
+                          includeFlutterTopics:
+                              widget.deckId == null ||
+                              widget.deckId == 'flutter-default',
+                          label: 'Nhóm trong bộ (tùy chọn)',
                           enabled: !_saving,
                           onChanged: (value) {
                             _topicCode = value;
