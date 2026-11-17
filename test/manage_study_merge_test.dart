@@ -4,6 +4,7 @@ import 'package:flashcard_sm2/controllers/card_controller.dart';
 import 'package:flashcard_sm2/core/app_theme.dart';
 import 'package:flashcard_sm2/models/flashcard.dart';
 import 'package:flashcard_sm2/screens/study_screen.dart';
+import 'package:flashcard_sm2/screens/main_nav_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -72,6 +73,115 @@ void main() {
     expect(find.text('Thẻ 1 / 1'), findsOneWidget);
     expect(find.text('Câu hỏi selected-future'), findsOneWidget);
     expect(find.text('Câu hỏi other-due'), findsNothing);
+  });
+
+  testWidgets(
+    'Tab Học khởi tạo ngầm nhận thẻ nhập mới trước thẻ cũ ngay khi chuyển tab',
+    (tester) async {
+      await load([_card('a'), _card('b')]);
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: controller,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const MainNavScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await controller.importCards([_card('x'), _card('y')]);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Học thẻ'));
+      await tester.pumpAndSettle();
+      expect(find.text('Câu hỏi x'), findsOneWidget);
+      expect(find.text('Thẻ 1 / 4'), findsOneWidget);
+      await _rate(tester);
+      expect(find.text('Câu hỏi y'), findsOneWidget);
+      await _rate(tester);
+      expect(find.text('Câu hỏi a'), findsOneWidget);
+    },
+  );
+
+  testWidgets('Thẻ mới lên trước phần chưa học, giữ tiến độ thẻ đã đánh giá', (
+    tester,
+  ) async {
+    await load([_card('a'), _card('b')]);
+    await _show(tester, controller);
+    await _rate(tester);
+    await controller.addCard(_card('new'));
+    await tester.pumpAndSettle();
+    expect(find.text('Câu hỏi new'), findsOneWidget);
+    expect(find.text('Thẻ 2 / 3'), findsOneWidget);
+    expect(
+      controller.cards.firstWhere((card) => card.id == 'a').repetitions,
+      1,
+    );
+    controller.setLanguage(true);
+    await tester.pumpAndSettle();
+    expect(find.text('Thẻ 2 / 3'), findsOneWidget);
+    await _rate(tester);
+    expect(find.text('Câu hỏi b'), findsOneWidget);
+  });
+
+  testWidgets('Phiên đã hoàn thành nhận thẻ mới ngay', (tester) async {
+    await load([_card('a')]);
+    await _show(tester, controller);
+    await _rate(tester);
+    expect(find.text('Tuyệt vời!'), findsOneWidget);
+    await controller.addCard(_card('new'));
+    await tester.pumpAndSettle();
+    expect(find.text('Câu hỏi new'), findsOneWidget);
+    expect(find.text('Thẻ 2 / 2'), findsOneWidget);
+  });
+
+  testWidgets(
+    'Tải lại đọc kho mới, bỏ thẻ đã xóa và giữ đúng chủ đề tùy chỉnh',
+    (tester) async {
+      await load([_card('a', topic: 'Nấu ăn')]);
+      await _show(tester, controller, topic: 'Nấu ăn');
+      store.savedCards = [
+        _card('other', topic: 'Chơi game'),
+        _card('new', topic: 'Nấu ăn'),
+      ];
+      await tester.tap(find.byKey(const ValueKey('study_refresh')));
+      await tester.pumpAndSettle();
+      expect(find.text('Câu hỏi new'), findsOneWidget);
+      expect(find.text('Thẻ 1 / 1'), findsOneWidget);
+      expect(find.text('Câu hỏi a'), findsNothing);
+      expect(store.writes, 0);
+    },
+  );
+
+  testWidgets('Tải lại lỗi giữ câu đang học và có thể thử lại', (tester) async {
+    await load([_card('a'), _card('b')]);
+    await _show(tester, controller);
+    await _rate(tester);
+    store.readFailure = StateError('Read failed');
+    await tester.tap(find.byKey(const ValueKey('study_refresh')));
+    await tester.pumpAndSettle();
+    expect(find.text('Câu hỏi b'), findsOneWidget);
+    expect(find.text('Thẻ 2 / 2'), findsOneWidget);
+    expect(
+      find.text('Không thể tải bộ thẻ. Vui lòng thử lại.'),
+      findsOneWidget,
+    );
+    store.readFailure = null;
+    await tester.tap(find.byKey(const ValueKey('study_refresh')));
+    await tester.pumpAndSettle();
+    expect(find.text('Câu hỏi b'), findsOneWidget);
+    expect(find.text('Thẻ 1 / 1'), findsOneWidget);
+    expect(controller.cards.first.repetitions, 1);
+    expect(store.writes, 1);
+  });
+
+  testWidgets('Bộ rỗng có nút tải lại và nhận thẻ từ kho', (tester) async {
+    await load([]);
+    await _show(tester, controller);
+    expect(find.text('Chưa có thẻ nào trong phiên học!'), findsOneWidget);
+    store.savedCards = [_card('new')];
+    await tester.tap(find.byKey(const ValueKey('study_refresh')));
+    await tester.pumpAndSettle();
+    expect(find.text('Câu hỏi new'), findsOneWidget);
   });
 
   testWidgets('Phiên theo chủ đề nhận thêm, sửa chủ đề và xóa thẻ', (
@@ -179,6 +289,12 @@ void main() {
           .widget<ElevatedButton>(
             find.widgetWithText(ElevatedButton, 'Ôn tập lại từ đầu'),
           )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const ValueKey('study_refresh')))
           .onPressed,
       isNull,
     );

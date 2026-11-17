@@ -1,0 +1,11 @@
+﻿front,back,topicCode,level,front_en,back_en
+StatefulWidget là gì?,Widget có trạng thái có thể thay đổi.,K01,Nhớ,What is a StatefulWidget?,A widget with mutable state.
+"Đoạn code này in gì?
+```dart
+  final names = [""An"", ""Bảo""];
+  print(names.join("", ""));
+```","An, Bảo",K02,Hiểu,"What does this print?
+```dart
+  final names = [""An"", ""Bảo""];
+  print(names.join("", ""));
+```","An, Bảo"

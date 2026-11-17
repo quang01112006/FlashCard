@@ -4,7 +4,12 @@ import '../core/app_theme.dart';
 import '../services/manage_card_filter.dart';
 
 class ManageCardFiltersSheet extends StatefulWidget {
-  const ManageCardFiltersSheet({super.key, required this.initialFilter});
+  const ManageCardFiltersSheet({
+    super.key,
+    required this.initialFilter,
+    this.topics = const [],
+  });
+  final List<String> topics;
 
   final ManageCardFilter initialFilter;
 
@@ -30,10 +35,14 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
             const SizedBox(height: 20),
             _buildDropdown(
               fieldKey: 'manage_filter_topic',
-              label: 'Khối kiến thức',
-              allLabel: 'Tất cả khối',
+              label: 'Chủ đề',
+              allLabel: 'Tất cả chủ đề',
               selected: _topicCode,
-              options: ManageCardFilter.topicCodes,
+              options: {
+                ...ManageCardFilter.topicCodes,
+                ...widget.topics,
+                ?_topicCode,
+              }.toList()..sort(),
               onChanged: (value) => setState(() => _topicCode = value),
             ),
             const SizedBox(height: 16),

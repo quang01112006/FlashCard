@@ -190,10 +190,10 @@ class CardController extends ChangeNotifier {
         'Vui lòng nhập đầy đủ câu hỏi và đáp án.',
       );
     }
-    if (!ManageCardFilter.topicCodes.contains(card.topicCode) ||
+    if (card.topicCode.trim().isEmpty ||
         !ManageCardFilter.levels.contains(card.level)) {
       throw const CardOperationException(
-        'Vui lòng chọn khối kiến thức và mức độ hợp lệ.',
+        'Vui lòng nhập chủ đề và chọn mức độ hợp lệ.',
       );
     }
   }
@@ -241,9 +241,25 @@ class CardController extends ChangeNotifier {
     super.dispose();
   }
 
-  /// TODO [Người 3 phụ trách Quản lý thẻ]:
-  /// Viết logic nạp danh sách thẻ từ file CSV hoặc AI
-  void importCards(List<Flashcard> newCards) {
-    // TODO: Người 3 điền code import thẻ ở đây
+  /// Thêm cả lượt nhập trong một lần lưu; lỗi ở bất kỳ thẻ nào thì giữ bộ cũ.
+  Future<void> importCards(List<Flashcard> newCards) {
+    final batch = List<Flashcard>.of(newCards);
+    if (batch.isEmpty) {
+      return Future.error(
+        const CardOperationException('Không có thẻ hợp lệ để nhập.'),
+      );
+    }
+    return _persist((next) {
+      final ids = next.map((card) => card.id).toSet();
+      for (final card in batch) {
+        _validateManualCard(card);
+        if (!ids.add(card.id)) {
+          throw const CardOperationException(
+            'Mã thẻ bị trùng. Vui lòng thử lại.',
+          );
+        }
+      }
+      next.insertAll(0, batch);
+    });
   }
 }

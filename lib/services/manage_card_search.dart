@@ -25,6 +25,7 @@ class ManageCardSearch {
     return cards.where((card) {
       return [
         card.id,
+        card.topicCode,
         card.front,
         card.back,
         card.frontEn,

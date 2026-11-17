@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
 import '../core/app_theme.dart';
 import '../models/flashcard.dart';
+import '../services/csv_service.dart';
+import '../services/manage_csv_files.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
 import '../widgets/code_text_view.dart';
 import '../widgets/manage_card_filters_sheet.dart';
 import '../widgets/manage_delete_card_dialog.dart';
 import 'manage_card_editor_screen.dart';
+import 'manage_csv_mapping_screen.dart';
+
+enum _CsvAction { import, export }
 
 class ManageCardsScreen extends StatefulWidget {
-  const ManageCardsScreen({super.key});
+  const ManageCardsScreen({super.key, this.csvFiles});
+
+  final ManageCsvFiles? csvFiles;
 
   @override
   State<ManageCardsScreen> createState() => _ManageCardsScreenState();
@@ -24,6 +32,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   String _query = '';
   ManageCardFilter _filter = const ManageCardFilter();
   String? _recentCardId;
+  bool _csvBusy = false;
+  bool _csvProcessing = false;
+  late final ManageCsvFiles _csvFiles =
+      widget.csvFiles ?? NativeManageCsvFiles();
 
   @override
   void dispose() {
@@ -51,7 +63,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => ManageCardFiltersSheet(initialFilter: _filter),
+      builder: (_) => ManageCardFiltersSheet(
+        initialFilter: _filter,
+        topics: context.read<CardController>().allTopics,
+      ),
     );
     if (!mounted || selected == null) return;
     setState(() {
@@ -112,6 +127,99 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         .showSnackBar(const SnackBar(content: Text('Đã xóa thẻ.')));
   }
 
+  Future<void> _handleCsv(_CsvAction action) async {
+    final controller = context.read<CardController>();
+    if (_csvBusy || controller.isSaving) return;
+    FocusScope.of(context).unfocus();
+    ScaffoldMessenger.of(context).clearSnackBars();
+    setState(() {
+      _csvBusy = true;
+      _csvProcessing = action == _CsvAction.import;
+    });
+    try {
+      if (action == _CsvAction.import) {
+        final file = await _csvFiles.pick();
+        if (!mounted || file == null) return;
+        final table = await compute(CsvService.inspectBytes, file.bytes);
+        if (!mounted) return;
+        setState(() => _csvProcessing = false);
+        final count = await Navigator.of(context).push<int>(
+          MaterialPageRoute(
+            builder: (_) => ManageCsvMappingScreen(
+              fileName: file.name,
+              table: table,
+              topicCode: _filter.topicCode,
+              level: _filter.level,
+            ),
+          ),
+        );
+        if (!mounted || count == null) return;
+        _recentCardId = null;
+        _resetSearchAndFilters();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Đã nhập $count thẻ.')));
+      } else {
+        // Xuất toàn bộ bộ thẻ, kể cả khi danh sách đang tìm kiếm hoặc lọc.
+        final cards = List<Flashcard>.of(controller.cards);
+        if (cards.isEmpty) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            scrollable: true,
+            title: const Text('Xuất CSV'),
+            content: Text(
+              'Xuất toàn bộ ${cards.length} thẻ, gồm nội dung Việt–Anh, '
+              'khối kiến thức và mức độ. Lịch ôn không được xuất.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Chọn nơi lưu'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+        setState(() => _csvProcessing = true);
+        final bytes = await compute(CsvService.exportBytes, cards);
+        if (!mounted) return;
+        final date = DateTime.now().toIso8601String().substring(0, 10);
+        final saved = await _csvFiles.save(
+          bytes,
+          suggestedName: 'flashcards_$date.csv',
+        );
+        if (!mounted || saved == null) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã xuất ${cards.length} thẻ ra file CSV.')),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is CsvFileException
+                ? error.message
+                : action == _CsvAction.import
+                ? 'Không thể đọc file CSV. Vui lòng chọn lại file.'
+                : 'Không thể lưu file CSV. Vui lòng thử lại.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _csvBusy = false;
+          _csvProcessing = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<CardController>();
@@ -124,8 +232,41 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
             IconButton(
               key: const ValueKey('manage_add_card'),
               tooltip: 'Thêm thẻ',
-              onPressed: controller.isSaving ? null : () => _openEditor(),
+              onPressed: controller.isSaving || _csvBusy
+                  ? null
+                  : () => _openEditor(),
               icon: const Icon(Icons.add),
+            ),
+          if (!controller.isLoading && controller.loadError == null)
+            PopupMenuButton<_CsvAction>(
+              key: const ValueKey('manage_csv_menu'),
+              tooltip: 'Nhập / xuất CSV',
+              enabled: !_csvBusy && !controller.isSaving,
+              icon: const Icon(Icons.import_export),
+              onSelected: _handleCsv,
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: _CsvAction.import,
+                  child: Text('Nhập CSV'),
+                ),
+                PopupMenuItem(
+                  value: _CsvAction.export,
+                  enabled: controller.cards.isNotEmpty,
+                  child: const Text('Xuất CSV'),
+                ),
+              ],
+            ),
+          if (_csvProcessing)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  semanticsLabel: 'Đang xử lý CSV',
+                ),
+              ),
             ),
         ],
       ),
@@ -164,7 +305,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         title: 'Chưa có thẻ nào',
         message: 'Thêm thẻ mới để bắt đầu xây dựng bộ thẻ của bạn.',
         actionLabel: 'Thêm thẻ mới',
-        onAction: controller.isSaving ? () {} : () => _openEditor(),
+        onAction: controller.isSaving || _csvBusy ? () {} : () => _openEditor(),
       );
     }
 
@@ -187,7 +328,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
             style: AppTextStyles.body,
             decoration: InputDecoration(
               labelText: 'Tìm kiếm thẻ',
-              hintText: 'Câu hỏi, đáp án hoặc mã thẻ',
+              hintText: 'Câu hỏi, đáp án, chủ đề hoặc mã thẻ',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _query.isEmpty
                   ? null
@@ -276,10 +417,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                     card: results[index],
                     isEnglish: controller.isEnglish,
                     highlighted: results[index].id == _recentCardId,
-                    onEdit: controller.isSaving
+                    onEdit: controller.isSaving || _csvBusy
                         ? null
                         : () => _openEditor(results[index]),
-                    onDelete: controller.isSaving
+                    onDelete: controller.isSaving || _csvBusy
                         ? null
                         : () => _deleteCard(results[index]),
                   ),

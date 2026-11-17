@@ -6,6 +6,7 @@ import '../core/app_theme.dart';
 import '../models/flashcard.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_store.dart';
+import '../widgets/manage_topic_field.dart';
 
 class ManageCardEditorScreen extends StatefulWidget {
   const ManageCardEditorScreen({
@@ -13,11 +14,13 @@ class ManageCardEditorScreen extends StatefulWidget {
     this.initialCard,
     this.topicCode,
     this.level,
+    this.draftOnly = false,
   });
 
   final Flashcard? initialCard;
   final String? topicCode;
   final String? level;
+  final bool draftOnly;
 
   @override
   State<ManageCardEditorScreen> createState() => _ManageCardEditorScreenState();
@@ -111,6 +114,11 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
         frontEn: _frontEn.text.trim().isEmpty ? null : _frontEn.text,
         backEn: _backEn.text.trim().isEmpty ? null : _backEn.text,
       );
+      if (widget.draftOnly) {
+        _allowPop = true;
+        Navigator.of(context).pop(draft);
+        return;
+      }
       final saved = initial == null
           ? await controller.addCard(draft)
           : await controller.editCard(draft);
@@ -131,7 +139,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope<String>(
+    return PopScope<Object?>(
       canPop: _allowPop || (!_dirty && !_saving),
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) _requestLeave();
@@ -166,12 +174,15 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                           required: true,
                         ),
                         const SizedBox(height: 16),
-                        _choiceField(
-                          'manage_editor_topic',
-                          'Khối kiến thức',
-                          _topicCode,
-                          ManageCardFilter.topicCodes,
-                          (value) => _topicCode = value,
+                        ManageTopicField(
+                          key: const ValueKey('manage_editor_topic'),
+                          value: _topicCode,
+                          topics: context.read<CardController>().allTopics,
+                          enabled: !_saving,
+                          onChanged: (value) {
+                            _topicCode = value;
+                            _markDirty();
+                          },
                         ),
                         const SizedBox(height: 16),
                         _choiceField(
