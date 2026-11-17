@@ -9,7 +9,12 @@ import '../widgets/code_text_view.dart';
 import '../widgets/flip_card_widget.dart';
 
 class StudyScreen extends StatefulWidget {
-  const StudyScreen({super.key});
+  final String? topicCode; // Tuỳ chọn: truyền mã chủ đề (ví dụ 'K01') để chỉ học riêng chủ đề đó
+
+  const StudyScreen({
+    super.key,
+    this.topicCode,
+  });
 
   @override
   State<StudyScreen> createState() => _StudyScreenState();
@@ -32,9 +37,16 @@ class _StudyScreenState extends State<StudyScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final controller = context.watch<CardController>();
-    final availableCards = controller.dueCards.isNotEmpty
+    var availableCards = controller.dueCards.isNotEmpty
         ? controller.dueCards
         : controller.cards;
+
+    // Nếu màn hình được mở kèm topicCode cụ thể -> Chỉ lọc thẻ của chủ đề đó
+    if (widget.topicCode != null && widget.topicCode!.isNotEmpty) {
+      availableCards = availableCards
+          .where((c) => c.topicCode == widget.topicCode)
+          .toList();
+    }
 
     if (availableCards.isNotEmpty) {
       if (!_isSessionInitialized || _sessionCards.isEmpty) {
