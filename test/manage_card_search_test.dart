@@ -67,4 +67,25 @@ void main() {
     expect(ManageCardSearch.search(cards, 'không tồn tại 987654'), isEmpty);
     expect(ManageCardSearch.search([], 'const'), isEmpty);
   });
+
+  test('Tìm xuyên qua dấu định dạng và không nhầm nhãn ngôn ngữ code', () {
+    final formatted = Flashcard(
+      id: 'formatted',
+      front: 'Trong khai báo `void greet(String name)`, tham số `name` là gì?',
+      back: 'Ví dụ:\n\n```dart\nvoid greet(String name) {}\n```',
+    );
+    expect(ManageCardSearch.search([formatted], 'khai bao void greet'), [
+      formatted,
+    ]);
+    expect(ManageCardSearch.search([formatted], 'tham so name la gi'), [
+      formatted,
+    ]);
+    expect(ManageCardSearch.search([formatted], 'void greet(String name)'), [
+      formatted,
+    ]);
+    expect(ManageCardSearch.search([formatted], '`void greet(String name)`'), [
+      formatted,
+    ]);
+    expect(ManageCardSearch.search([formatted], 'dart'), isEmpty);
+  });
 }

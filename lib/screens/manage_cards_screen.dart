@@ -6,6 +6,7 @@ import '../core/app_theme.dart';
 import '../models/flashcard.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
+import '../widgets/code_text_view.dart';
 import '../widgets/manage_card_filters_sheet.dart';
 
 class ManageCardsScreen extends StatefulWidget {
@@ -209,6 +210,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                   itemBuilder: (context, index) => _ManageCardItem(
                     key: ValueKey(results[index].id),
                     card: results[index],
+                    isEnglish: controller.isEnglish,
                   ),
                 ),
         ),
@@ -218,9 +220,20 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
 }
 
 class _ManageCardItem extends StatelessWidget {
-  const _ManageCardItem({super.key, required this.card});
+  const _ManageCardItem({
+    super.key,
+    required this.card,
+    required this.isEnglish,
+  });
 
   final Flashcard card;
+  final bool isEnglish;
+
+  String _textForLanguage(String vietnamese, String? english) {
+    return isEnglish && english != null && english.trim().isNotEmpty
+        ? english
+        : vietnamese;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +246,14 @@ class _ManageCardItem extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         shape: const Border(),
         collapsedShape: const Border(),
-        title: Text(card.front, style: AppTextStyles.body),
+        title: CodeTextView(
+          key: PageStorageKey(
+            'manage_front_${card.id}_${isEnglish ? 'en' : 'vi'}',
+          ),
+          text: _textForLanguage(card.front, card.frontEn),
+          baseStyle: AppTextStyles.body,
+          textAlign: TextAlign.left,
+        ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
@@ -249,10 +269,15 @@ class _ManageCardItem extends StatelessWidget {
           const Divider(color: AppColors.border),
           const Text('Đáp án & giải thích', style: AppTextStyles.subHeading),
           const SizedBox(height: 8),
-          SelectableText(
-            card.back,
-            key: PageStorageKey('manage_answer_${card.id}'),
-            style: AppTextStyles.body,
+          SelectionArea(
+            child: CodeTextView(
+              key: PageStorageKey(
+                'manage_answer_${card.id}_${isEnglish ? 'en' : 'vi'}',
+              ),
+              text: _textForLanguage(card.back, card.backEn),
+              baseStyle: AppTextStyles.body,
+              textAlign: TextAlign.left,
+            ),
           ),
         ],
       ),

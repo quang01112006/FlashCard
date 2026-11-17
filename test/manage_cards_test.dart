@@ -5,6 +5,7 @@ import 'package:flashcard_sm2/controllers/card_controller.dart';
 import 'package:flashcard_sm2/core/app_theme.dart';
 import 'package:flashcard_sm2/screens/manage_cards_screen.dart';
 import 'package:flashcard_sm2/screens/main_nav_screen.dart';
+import 'package:flashcard_sm2/widgets/code_text_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -240,6 +241,150 @@ void main() {
     await tester.tap(find.text(_record()['front'] as String));
     await tester.pumpAndSettle();
     expect(find.text(_record()['back'] as String), findsNothing);
+  });
+
+  testWidgets('Dùng widget chung để hiển thị code ở câu hỏi và đáp án', (
+    tester,
+  ) async {
+    const front =
+        'Từ khóa `const` trong đoạn mã:\n\n```dart\nconst value = 42;\n```';
+    const back = 'Kết quả là `42`.\n\n```dart\n  print(value);\n```';
+    final controller = CardController(
+      assetBundle: _TestBundle(
+        () async => jsonEncode([
+          {..._record(front: front), 'back': back},
+        ]),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+
+    expect(find.byType(CodeTextView), findsOneWidget);
+    expect(find.text('const'), findsOneWidget);
+    expect(find.text('const value = 42;'), findsOneWidget);
+    expect(find.textContaining('```'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CodeTextView), findsNWidgets(2));
+    expect(find.text('42'), findsOneWidget);
+    expect(find.text('  print(value);'), findsOneWidget);
+    expect(find.textContaining('```'), findsNothing);
+    expect(find.byType(SelectionArea), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Code cuộn ngang không xung đột với trạng thái mở thẻ', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final longCode = "  print('${List.filled(60, 'Dart').join(' ')}');";
+    final controller = CardController(
+      assetBundle: _TestBundle(
+        () async => jsonEncode([
+          {
+            ..._record(front: 'Ví dụ Dart\n\n```dart\n$longCode\n```'),
+            'back': 'Giải thích\n\n```dart\n$longCode\n```',
+          },
+        ]),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+
+    final frontView = find.byKey(
+      const PageStorageKey('manage_front_K01-001_vi'),
+    );
+    final frontScroll = find.descendant(
+      of: frontView,
+      matching: find.byType(Scrollable),
+    );
+    await tester.drag(frontScroll, const Offset(-120, 0));
+    await tester.pumpAndSettle();
+    final frontPosition = tester.state<ScrollableState>(frontScroll).position;
+    expect(frontPosition.pixels, greaterThan(0));
+
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await tester.pumpAndSettle();
+    final backView = find.byKey(
+      const PageStorageKey('manage_answer_K01-001_vi'),
+    );
+    final backScroll = find.descendant(
+      of: backView,
+      matching: find.byType(Scrollable),
+    );
+    expect(tester.state<ScrollableState>(backScroll).position.pixels, 0);
+    await tester.ensureVisible(backView);
+    await tester.pumpAndSettle();
+    await tester.drag(backScroll, const Offset(-160, 0));
+    await tester.pumpAndSettle();
+    expect(
+      tester.state<ScrollableState>(backScroll).position.pixels,
+      greaterThan(0),
+    );
+
+    // Dựng lại danh sách để kiểm tra khôi phục cả trạng thái mở và vị trí code.
+    await tester.enterText(find.byType(TextField), 'khongtontai987654');
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'K01-001');
+    await tester.pumpAndSettle();
+    expect(find.byType(CodeTextView), findsNWidgets(2));
+    expect(
+      tester.state<ScrollableState>(frontScroll).position.pixels,
+      greaterThan(0),
+    );
+    expect(
+      tester.state<ScrollableState>(backScroll).position.pixels,
+      greaterThan(0),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Dữ liệu thật có code nội dòng và khối code trên màn hình hẹp', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final controller = CardController();
+    addTearDown(controller.dispose);
+    await tester.runAsync(controller.loadDefaultCards);
+    await _showScreen(tester, controller);
+
+    await tester.enterText(find.byType(TextField), 'K01-002');
+    await tester.pumpAndSettle();
+    expect(
+      find.text('void greet(String name, [String? title])'),
+      findsOneWidget,
+    );
+    expect(find.text('1 / 300 thẻ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.enterText(find.byType(TextField), 'K01-005');
+    await tester.pumpAndSettle();
+    final frontView = find.byKey(
+      const PageStorageKey('manage_front_K01-005_vi'),
+    );
+    final codeScroll = find.descendant(
+      of: frontView,
+      matching: find.byType(Scrollable),
+    );
+    expect(codeScroll, findsOneWidget);
+    expect(
+      tester.state<ScrollableState>(codeScroll).position.maxScrollExtent,
+      greaterThan(0),
+    );
+    expect(find.textContaining('```'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Lỗi đọc file có nút thử lại và phục hồi được', (tester) async {
@@ -554,6 +699,167 @@ void main() {
     expect(find.text('8 / 300 thẻ'), findsOneWidget);
     expect(find.text('Bộ lọc (1)'), findsOneWidget);
   });
+
+  testWidgets('Đổi Việt–Anh cập nhật cả hai mặt của thẻ đang mở', (
+    tester,
+  ) async {
+    final controller = CardController(
+      assetBundle: _TestBundle(() async => jsonEncode([_record()])),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    final original = controller.cards.single;
+    await _showScreen(tester, controller);
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await tester.pumpAndSettle();
+    expect(find.text(original.back), findsOneWidget);
+
+    controller.setLanguage(true);
+    await tester.pumpAndSettle();
+    expect(find.text(original.frontEn!), findsOneWidget);
+    expect(find.text(original.backEn!), findsOneWidget);
+    expect(find.text(original.front), findsNothing);
+    expect(find.text(original.back), findsNothing);
+
+    controller.setLanguage(false);
+    await tester.pumpAndSettle();
+    expect(find.text(original.front), findsOneWidget);
+    expect(find.text(original.back), findsOneWidget);
+    expect(controller.cards.single, same(original));
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final scenario in [
+    {
+      'name': 'Thiếu câu hỏi Anh vẫn dùng được đáp án Anh',
+      'front_en': null,
+      'back_en': 'Translated answer',
+      'expected_front': _record()['front'],
+      'expected_back': 'Translated answer',
+    },
+    {
+      'name': 'Đáp án Anh chỉ có khoảng trắng thì dùng đáp án Việt',
+      'front_en': 'Translated question',
+      'back_en': '  \n\t',
+      'expected_front': 'Translated question',
+      'expected_back': _record()['back'],
+    },
+    {
+      'name': 'Hai bản dịch rỗng đều trở về nội dung Việt',
+      'front_en': '',
+      'back_en': '',
+      'expected_front': _record()['front'],
+      'expected_back': _record()['back'],
+    },
+  ]) {
+    testWidgets(scenario['name'] as String, (tester) async {
+      final controller = CardController(
+        assetBundle: _TestBundle(
+          () async => jsonEncode([
+            {
+              ..._record(),
+              'front_en': scenario['front_en'],
+              'back_en': scenario['back_en'],
+            },
+          ]),
+        ),
+      );
+      addTearDown(controller.dispose);
+      await controller.loadDefaultCards();
+      controller.setLanguage(true);
+      await _showScreen(tester, controller);
+      expect(find.text(scenario['expected_front'] as String), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+      expect(find.text(scenario['expected_back'] as String), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Đổi ngôn ngữ giữ bộ lọc, từ khóa Việt và thẻ đang mở', (
+    tester,
+  ) async {
+    final controller = CardController(
+      assetBundle: _TestBundle(
+        () async => jsonEncode([
+          _record(),
+          {
+            ..._record(id: 'K02-001', front: 'Câu hỏi khác'),
+            'topicCode': 'K02',
+            'level': 'Hiểu',
+          },
+        ]),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.loadDefaultCards();
+    await _showScreen(tester, controller);
+    await tester.enterText(find.byType(TextField), 'tu khoa');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bộ lọc'));
+    await tester.pumpAndSettle();
+    await _selectFilter(tester, 'manage_filter_topic', 'K01');
+    await _selectFilter(tester, 'manage_filter_level', 'Nhớ');
+    await tester.tap(find.text('Áp dụng'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await tester.pumpAndSettle();
+
+    controller.setLanguage(true);
+    await tester.pumpAndSettle();
+    expect(find.text('1 / 2 thẻ'), findsOneWidget);
+    expect(find.text('Bộ lọc (2)'), findsOneWidget);
+    expect(find.text('K01 • Nhớ'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'tu khoa',
+    );
+    expect(find.text('What does const do?'), findsOneWidget);
+    expect(find.text('Creates a compile-time constant.'), findsOneWidget);
+    expect(controller.cards, hasLength(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Đổi ngôn ngữ thẻ thật có code vẫn giữ định dạng và trạng thái mở',
+    (tester) async {
+      final controller = CardController();
+      addTearDown(controller.dispose);
+      await tester.runAsync(controller.loadDefaultCards);
+      await _showScreen(tester, controller);
+      await tester.enterText(find.byType(TextField), 'K01-005');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await tester.pumpAndSettle();
+
+      controller.setLanguage(true);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('What does the following code print?'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Explanation:'), findsOneWidget);
+      final englishView = find.byKey(
+        const PageStorageKey('manage_front_K01-005_en'),
+      );
+      expect(
+        find.descendant(of: englishView, matching: find.byType(Scrollable)),
+        findsOneWidget,
+      );
+      expect(find.text('meow generic'), findsOneWidget);
+      expect(find.textContaining('```'), findsNothing);
+
+      controller.setLanguage(false);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Đoạn mã sau in ra gì?'), findsOneWidget);
+      expect(find.textContaining('Giải thích:'), findsOneWidget);
+      expect(
+        find.byKey(const PageStorageKey('manage_front_K01-005_vi')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('Lọc và xóa lọc trên màn hình hẹp với cỡ chữ lớn', (
     tester,

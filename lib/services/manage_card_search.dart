@@ -13,6 +13,10 @@ class ManageCardSearch {
   };
   static final _combiningMarks = RegExp(r'[\u0300-\u036f]');
   static final _whitespace = RegExp(r'\s+');
+  static final _codeBlocks = RegExp(
+    r'```(?:[a-zA-Z0-9_-]*\r?\n)?([\s\S]*?)```',
+  );
+  static final _inlineCode = RegExp(r'`([^`]+)`');
 
   static List<Flashcard> search(Iterable<Flashcard> cards, String query) {
     final keyword = _normalize(query);
@@ -30,7 +34,11 @@ class ManageCardSearch {
   }
 
   static String _normalize(String text) {
-    var result = text.toLowerCase();
+    // Tìm theo nội dung hiển thị, bỏ dấu định dạng và nhãn ngôn ngữ code.
+    var result = text
+        .replaceAllMapped(_codeBlocks, (match) => match.group(1)!)
+        .replaceAllMapped(_inlineCode, (match) => match.group(1)!)
+        .toLowerCase();
     for (final accent in _vietnameseAccents.entries) {
       result = result.replaceAll(accent.key, accent.value);
     }
