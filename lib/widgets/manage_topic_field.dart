@@ -11,6 +11,7 @@ class ManageTopicField extends StatelessWidget {
     this.topics = const [],
     this.enabled = true,
     this.label = 'Chủ đề',
+    this.helperText = 'Chọn gợi ý hoặc nhập tên chủ đề mới.',
     this.required = true,
     this.includeFlutterTopics = true,
   });
@@ -19,6 +20,7 @@ class ManageTopicField extends StatelessWidget {
   final List<String> topics;
   final bool enabled;
   final String label;
+  final String helperText;
   final bool required;
   final bool includeFlutterTopics;
 
@@ -42,7 +44,7 @@ class ManageTopicField extends StatelessWidget {
       enabled: enabled,
       decoration: InputDecoration(
         labelText: label,
-        helperText: 'Chọn gợi ý hoặc nhập tên chủ đề mới.',
+        helperText: helperText,
         border: const OutlineInputBorder(),
       ),
       onChanged: (text) => onChanged(text.trim()),

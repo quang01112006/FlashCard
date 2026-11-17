@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../controllers/card_controller.dart';
 import '../models/flashcard.dart';
 import '../services/ai_card_service.dart';
+import '../services/manage_ai_strings.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_store.dart';
 import '../widgets/code_text_view.dart';
@@ -22,6 +23,9 @@ class ManageAiScreen extends StatefulWidget {
 }
 
 class _ManageAiScreenState extends State<ManageAiScreen> {
+  ManageAiStrings get _strings =>
+      ManageAiStrings(context.read<CardController>().isEnglish);
+
   final _form = GlobalKey<FormState>();
   final _topic = TextEditingController();
   int _count = 5;
@@ -91,7 +95,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           draftOnly: true,
           deckId: widget.deckId,
           initialCard: draft.toCard(
-            id: 'demo-preview-$index',
+            id: 'ai-preview-$index',
             deckId: widget.deckId,
           ),
         ),
@@ -150,16 +154,16 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Bỏ bản nháp?'),
-        content: const Text('Các thẻ chưa lưu sẽ bị bỏ.'),
+        title: Text(_strings.text('Bỏ bản nháp?')),
+        content: Text(_strings.text('Các thẻ chưa lưu sẽ bị bỏ.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Tiếp tục xem'),
+            child: Text(_strings.text('Tiếp tục xem')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Bỏ bản nháp'),
+            child: Text(_strings.text('Bỏ bản nháp')),
           ),
         ],
       ),
@@ -192,12 +196,19 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_drafts == null ? 'Tạo thẻ AI' : 'Xem trước thẻ'),
+          title: Text(
+            _drafts == null
+                ? _strings.text('Tạo thẻ AI')
+                : _strings.text('Xem trước thẻ'),
+          ),
           leading: BackButton(onPressed: busy ? null : _leave),
         ),
         body: SafeArea(
           child: _drafts == null
-              ? _buildForm(deck?.name ?? 'Bộ thẻ không còn tồn tại', busy)
+              ? _buildForm(
+                  deck?.name ?? _strings.text('Bộ thẻ không còn tồn tại'),
+                  busy,
+                )
               : _buildPreview(busy),
         ),
         bottomNavigationBar: _drafts == null
@@ -213,7 +224,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
-                            _error!,
+                            _strings.error(_error!),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),
@@ -226,8 +237,8 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                             : _save,
                         child: Text(
                           _saving
-                              ? 'Đang lưu...'
-                              : 'Lưu ${_selected.length} thẻ đã chọn',
+                              ? _strings.text('Đang lưu...')
+                              : _strings.save(_selected.length),
                         ),
                       ),
                     ],
@@ -244,12 +255,14 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'Bộ nhận: $deckName',
+          _strings.deck(deckName),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 12),
-        const Text(
-          'Nội dung có thể chưa chính xác. Hãy kiểm tra và chỉnh sửa trước khi dùng để học.',
+        Text(
+          _strings.text(
+            'Nội dung có thể chưa chính xác. Hãy kiểm tra và chỉnh sửa trước khi dùng để học.',
+          ),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -259,13 +272,13 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           maxLines: 3,
           minLines: 2,
           maxLength: 500,
-          decoration: const InputDecoration(
-            labelText: 'Chủ đề hoặc kiến thức',
-            hintText: 'Ví dụ: các kỹ thuật luộc trứng',
+          decoration: InputDecoration(
+            labelText: _strings.text('Chủ đề hoặc kiến thức'),
+            hintText: _strings.text('Ví dụ: các kỹ thuật luộc trứng'),
             border: OutlineInputBorder(),
           ),
           validator: (value) => value == null || value.trim().isEmpty
-              ? 'Vui lòng nhập chủ đề hoặc kiến thức.'
+              ? _strings.text('Vui lòng nhập chủ đề hoặc kiến thức.')
               : null,
         ),
         const SizedBox(height: 12),
@@ -273,13 +286,13 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           key: const ValueKey('manage_ai_count'),
           initialValue: _count,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Số thẻ',
+          decoration: InputDecoration(
+            labelText: _strings.text('Số thẻ'),
             border: OutlineInputBorder(),
           ),
           items: [
             for (var i = 1; i <= 10; i++)
-              DropdownMenuItem(value: i, child: Text('$i thẻ')),
+              DropdownMenuItem(value: i, child: Text(_strings.count(i))),
           ],
           onChanged: busy ? null : (value) => setState(() => _count = value!),
         ),
@@ -288,20 +301,20 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           key: const ValueKey('manage_ai_level'),
           initialValue: _level,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Mức độ',
+          decoration: InputDecoration(
+            labelText: _strings.text('Mức độ'),
             border: OutlineInputBorder(),
           ),
           items: [
             for (final level in ManageCardFilter.levels)
-              DropdownMenuItem(value: level, child: Text(level)),
+              DropdownMenuItem(value: level, child: Text(_strings.text(level))),
           ],
           onChanged: busy ? null : (value) => setState(() => _level = value!),
         ),
         SwitchListTile(
           key: const ValueKey('manage_ai_bilingual'),
           contentPadding: EdgeInsets.zero,
-          title: const Text('Thêm mẫu tiếng Anh'),
+          title: Text(_strings.text('Tạo thêm bản tiếng Anh')),
           value: _bilingual,
           onChanged: busy
               ? null
@@ -311,7 +324,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              _error!,
+              _strings.error(_error!),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
@@ -322,7 +335,11 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                   context.read<CardController>().deckById(widget.deckId) == null
               ? null
               : _generate,
-          child: Text(_generating ? 'Đang tạo...' : 'Tạo bản nháp'),
+          child: Text(
+            _generating
+                ? _strings.text('Đang tạo...')
+                : _strings.text('Tạo bản nháp'),
+          ),
         ),
       ],
     ),
@@ -337,17 +354,25 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Bộ nhận: ${context.watch<CardController>().deckById(widget.deckId)?.name ?? 'Bộ thẻ không còn tồn tại'}',
+                _strings.deck(
+                  context
+                          .watch<CardController>()
+                          .deckById(widget.deckId)
+                          ?.name ??
+                      _strings.text('Bộ thẻ không còn tồn tại'),
+                ),
               ),
-              const Text(
-                'Hãy kiểm tra và chỉnh sửa nội dung AI trước khi lưu.',
+              Text(
+                _strings.text(
+                  'Hãy kiểm tra và chỉnh sửa nội dung AI trước khi lưu.',
+                ),
               ),
-              Text('Đã chọn ${_selected.length}/${_drafts!.length} thẻ'),
+              Text(_strings.selected(_selected.length, _drafts!.length)),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: busy ? null : () => _leave(reset: true),
-                  child: const Text('Đổi yêu cầu'),
+                  child: Text(_strings.text('Đổi yêu cầu')),
                 ),
               ),
             ],
@@ -380,7 +405,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              subtitle: Text(draft.level),
+              subtitle: Text(_strings.text(draft.level)),
               expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
               childrenPadding: const EdgeInsets.all(16),
               children: [
@@ -388,22 +413,22 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                   key: ValueKey('manage_ai_edit_$index'),
                   onPressed: busy ? null : () => _edit(index),
                   icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Chỉnh thẻ'),
+                  label: Text(_strings.text('Chỉnh thẻ')),
                 ),
-                const Text('Câu hỏi'),
+                Text(_strings.text('Câu hỏi')),
                 CodeTextView(
                   key: PageStorageKey('manage_ai_front_$index'),
                   text: draft.front,
                 ),
                 const SizedBox(height: 8),
-                const Text('Đáp án'),
+                Text(_strings.text('Đáp án')),
                 CodeTextView(
                   key: PageStorageKey('manage_ai_back_$index'),
                   text: draft.back,
                 ),
                 if (draft.frontEn != null) ...[
                   const SizedBox(height: 8),
-                  const Text('Câu hỏi tiếng Anh'),
+                  Text(_strings.text('Câu hỏi tiếng Anh')),
                   CodeTextView(
                     key: PageStorageKey('manage_ai_front_en_$index'),
                     text: draft.frontEn!,
@@ -411,7 +436,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                 ],
                 if (draft.backEn != null) ...[
                   const SizedBox(height: 8),
-                  const Text('Đáp án tiếng Anh'),
+                  Text(_strings.text('Đáp án tiếng Anh')),
                   CodeTextView(
                     key: PageStorageKey('manage_ai_back_en_$index'),
                     text: draft.backEn!,

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
-import '../core/app_theme.dart';
 import '../models/flashcard.dart';
 import '../services/manage_card_filter.dart';
+import '../services/manage_ai_strings.dart';
 import '../services/manage_card_store.dart';
 import '../widgets/manage_topic_field.dart';
 
@@ -29,6 +29,9 @@ class ManageCardEditorScreen extends StatefulWidget {
 }
 
 class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
+  ManageAiStrings get _strings =>
+      ManageAiStrings(context.read<CardController>().isEnglish);
+
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _front;
   late final TextEditingController _back;
@@ -82,16 +85,16 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Bỏ thay đổi?'),
-        content: const Text('Nội dung bạn vừa nhập chưa được lưu.'),
+        title: Text(_strings.text('Bỏ thay đổi?')),
+        content: Text(_strings.text('Nội dung bạn vừa nhập chưa được lưu.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Tiếp tục nhập'),
+            child: Text(_strings.text('Tiếp tục nhập')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Bỏ thay đổi'),
+            child: Text(_strings.text('Bỏ thay đổi')),
           ),
         ],
       ),
@@ -147,6 +150,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CardController>();
     return PopScope<Object?>(
       canPop: _allowPop || (!_dirty && !_saving),
       onPopInvokedWithResult: (didPop, result) {
@@ -154,7 +158,11 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.initialCard == null ? 'Thêm thẻ' : 'Sửa thẻ'),
+          title: Text(
+            widget.initialCard == null
+                ? _strings.text('Thêm thẻ')
+                : _strings.text('Sửa thẻ'),
+          ),
           leading: BackButton(onPressed: _saving ? null : _requestLeave),
         ),
         body: SafeArea(
@@ -170,14 +178,14 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                       children: [
                         _contentField(
                           'manage_editor_front',
-                          'Câu hỏi',
+                          _strings.text('Câu hỏi'),
                           _front,
                           required: true,
                         ),
                         const SizedBox(height: 16),
                         _contentField(
                           'manage_editor_back',
-                          'Đáp án & giải thích',
+                          _strings.text('Đáp án & giải thích'),
                           _back,
                           required: true,
                         ),
@@ -194,7 +202,10 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                           includeFlutterTopics:
                               widget.deckId == null ||
                               widget.deckId == 'flutter-default',
-                          label: 'Nhóm trong bộ (tùy chọn)',
+                          label: _strings.text('Nhóm trong bộ (tùy chọn)'),
+                          helperText: _strings.text(
+                            'Chọn gợi ý hoặc nhập tên chủ đề mới.',
+                          ),
                           enabled: !_saving,
                           onChanged: (value) {
                             _topicCode = value;
@@ -204,26 +215,26 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                         const SizedBox(height: 16),
                         _choiceField(
                           'manage_editor_level',
-                          'Mức độ',
+                          _strings.text('Mức độ'),
                           _level,
                           ManageCardFilter.levels,
                           (value) => _level = value,
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'Tiếng Anh (tùy chọn)',
-                          style: AppTextStyles.subHeading,
+                        Text(
+                          _strings.text('Tiếng Anh (tùy chọn)'),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         _contentField(
                           'manage_editor_front_en',
-                          'Câu hỏi tiếng Anh',
+                          _strings.text('Câu hỏi tiếng Anh'),
                           _frontEn,
                         ),
                         const SizedBox(height: 16),
                         _contentField(
                           'manage_editor_back_en',
-                          'Đáp án tiếng Anh',
+                          _strings.text('Đáp án tiếng Anh'),
                           _backEn,
                         ),
                       ],
@@ -240,9 +251,9 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                   child: Semantics(
                     liveRegion: true,
                     child: Text(
-                      _error!,
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.danger,
+                      _strings.error(_error!),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
                       ),
                     ),
                   ),
@@ -253,7 +264,11 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _saving ? null : _save,
-                    child: Text(_saving ? 'Đang lưu...' : 'Lưu thẻ'),
+                    child: Text(
+                      _saving
+                          ? _strings.text('Đang lưu...')
+                          : _strings.text('Lưu thẻ'),
+                    ),
                   ),
                 ),
               ),
@@ -278,7 +293,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
       maxLines: null,
       autocorrect: false,
       keyboardType: TextInputType.multiline,
-      style: AppTextStyles.body,
+      style: Theme.of(context).textTheme.bodyLarge,
       onChanged: (_) => _markDirty(),
       decoration: InputDecoration(
         labelText: label,
@@ -286,7 +301,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
         border: const OutlineInputBorder(),
       ),
       validator: (value) => required && (value == null || value.trim().isEmpty)
-          ? 'Vui lòng nhập ${label.toLowerCase()}.'
+          ? _strings.requiredField(label)
           : null,
     );
   }
@@ -304,7 +319,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
       isExpanded: true,
       items: [
         for (final option in {...options, value})
-          DropdownMenuItem(value: option, child: Text(option)),
+          DropdownMenuItem(value: option, child: Text(_strings.text(option))),
       ],
       decoration: InputDecoration(
         labelText: label,
@@ -318,9 +333,8 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                 _markDirty();
               }
             },
-      validator: (selected) => options.contains(selected)
-          ? null
-          : 'Vui lòng chọn ${label.toLowerCase()} hợp lệ.',
+      validator: (selected) =>
+          options.contains(selected) ? null : _strings.invalidChoice(label),
     );
   }
 }

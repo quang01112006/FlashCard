@@ -7,6 +7,7 @@ import '../core/app_theme.dart';
 import '../models/flashcard.dart';
 import '../services/csv_service.dart';
 import '../services/ai_card_service.dart';
+import '../services/manage_ai_strings.dart';
 import '../services/manage_csv_files.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
@@ -180,8 +181,11 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       if (!mounted || count == null) return;
       _recentCardId = null;
       _resetSearchAndFilters();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Đã lưu $count thẻ.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ManageAiStrings(controller.isEnglish).saved(count)),
+        ),
+      );
       return;
     }
     FocusScope.of(context).unfocus();
@@ -333,9 +337,11 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
               onSelected: _handleCsv,
               itemBuilder: (_) => [
                 if (widget.deckId != null)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _CsvAction.demoAi,
-                    child: Text('Tạo thẻ AI'),
+                    child: Text(
+                      ManageAiStrings(controller.isEnglish).text('Tạo thẻ AI'),
+                    ),
                   ),
                 const PopupMenuItem(
                   value: _CsvAction.import,
