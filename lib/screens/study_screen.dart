@@ -24,6 +24,10 @@ class _StudyScreenState extends State<StudyScreen> {
   GlobalKey<FlipCardWidgetState> _flipCardKey =
       GlobalKey<FlipCardWidgetState>();
 
+  // Lưu lại trạng thái của thẻ trước khi đánh giá để hỗ trợ tính năng Hoàn tác (Undo) chuẩn Anki
+  Flashcard? _lastRatedCard;
+  int? _lastRatedIndex;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -44,16 +48,12 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   void _restartSession() {
-    final controller = context.read<CardController>();
-    final availableCards = controller.dueCards.isNotEmpty
-        ? controller.dueCards
-        : controller.cards;
-
     setState(() {
-      _sessionCards = List.from(availableCards);
       _currentIndex = 0;
       _isAnswerRevealed = false;
       _flipCardKey = GlobalKey<FlipCardWidgetState>();
+      _lastRatedCard = null;
+      _lastRatedIndex = null;
     });
   }
 
@@ -66,7 +66,39 @@ class _StudyScreenState extends State<StudyScreen> {
     }
   }
 
+  /// Hoàn tác câu vừa đánh giá
+  void _undoLastRating() {
+    if (_lastRatedCard == null || _lastRatedIndex == null) return;
+
+    final cardToRestore = _lastRatedCard!;
+    final indexToRestore = _lastRatedIndex!;
+
+    // Khôi phục lại trạng thái cũ của thẻ trong Store chung và trong phiên
+    context.read<CardController>().updateCard(cardToRestore);
+    _sessionCards[indexToRestore] = cardToRestore;
+
+    setState(() {
+      _currentIndex = indexToRestore;
+      _isAnswerRevealed = false;
+      _flipCardKey = GlobalKey<FlipCardWidgetState>();
+      _lastRatedCard = null;
+      _lastRatedIndex = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Đã hoàn tác câu vừa đánh giá'),
+        duration: Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _onRateCard(ReviewRating rating, Flashcard currentCard) {
+    // 0. Lưu lại trạng thái thẻ trước khi chấm điểm để hỗ trợ Hoàn tác
+    _lastRatedCard = currentCard;
+    _lastRatedIndex = _currentIndex;
+
     // 1. Chạy thuật toán SM-2 tính toán chu kỳ mới
     final sm2Result = SM2Algorithm.calculateWithRating(
       currentRepetitions: currentCard.repetitions,
@@ -91,10 +123,7 @@ class _StudyScreenState extends State<StudyScreen> {
     setState(() {
       _currentIndex++;
       _isAnswerRevealed = false;
-      _flipCardKey =
-          GlobalKey<
-            FlipCardWidgetState
-          >(); // Tạo key mới để thẻ câu sau tự động úp về mặt trước
+      _flipCardKey = GlobalKey<FlipCardWidgetState>();
     });
   }
 
@@ -123,8 +152,23 @@ class _StudyScreenState extends State<StudyScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.inbox_outlined, size: 72, color: theme.hintColor),
-                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.style_outlined,
+                    size: 64,
+                    color: isDark
+                        ? const Color(0xFF818CF8)
+                        : AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
                 const Text(
                   'Chưa có thẻ nào trong phiên học!',
                   style: AppTextStyles.subHeading,
@@ -145,7 +189,17 @@ class _StudyScreenState extends State<StudyScreen> {
     // Trạng thái 2: Đã hoàn thành hết số thẻ trong phiên
     if (_currentIndex >= _sessionCards.length) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Hoàn thành phiên học')),
+        appBar: AppBar(
+          title: const Text('Hoàn thành phiên học'),
+          actions: [
+            if (_lastRatedCard != null)
+              IconButton(
+                icon: const Icon(Icons.undo),
+                tooltip: 'Hoàn tác câu vừa đánh giá',
+                onPressed: _undoLastRating,
+              ),
+          ],
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -207,6 +261,13 @@ class _StudyScreenState extends State<StudyScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Thẻ ${_currentIndex + 1} / ${_sessionCards.length}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: 'Hoàn tác câu vừa đánh giá',
+            onPressed: _lastRatedCard != null ? _undoLastRating : null,
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
