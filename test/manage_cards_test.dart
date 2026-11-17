@@ -11,6 +11,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'support/manage_card_test_store.dart';
+
+CardController _controller({AssetBundle? assetBundle}) =>
+    CardController(assetBundle: assetBundle, store: MemoryManageCardStore());
+
 class _TestBundle extends CachingAssetBundle {
   _TestBundle(this.read);
 
@@ -18,7 +23,7 @@ class _TestBundle extends CachingAssetBundle {
 
   @override
   Future<String> loadString(String key, {bool cache = true}) {
-    expect(key, 'assets/default_cards.json');
+    expectSync(key, 'assets/default_cards.json');
     return read();
   }
 
@@ -67,7 +72,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('Nạp đủ 300 thẻ thật, 20 khối và giữ nội dung song ngữ', () async {
-    final controller = CardController();
+    final controller = _controller();
     addTearDown(controller.dispose);
 
     await controller.loadDefaultCards();
@@ -87,7 +92,7 @@ void main() {
   test('Không nạp trùng khi có hai yêu cầu đồng thời hoặc nạp lại', () async {
     final pending = Completer<String>();
     var calls = 0;
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() {
         calls++;
         return pending.future;
@@ -111,7 +116,7 @@ void main() {
     'Nạp mặc định không ghi đè thẻ đã học; tải lại chỉ khi yêu cầu',
     () async {
       var reads = 0;
-      final controller = CardController(
+      final controller = _controller(
         assetBundle: _TestBundle(() async {
           reads++;
           return jsonEncode([_record()]);
@@ -125,16 +130,17 @@ void main() {
         easeFactor: 2.1,
         nextReviewDate: DateTime(2099, 1, 1),
       );
-      controller.updateCard(reviewed);
+      await controller.updateCard(reviewed);
       await controller.loadDefaultCards();
 
       expect(reads, 1);
-      expect(controller.cards.single, same(reviewed));
+      expect(controller.cards.single.nextReviewDate, reviewed.nextReviewDate);
+      expect(controller.cards.single.repetitions, 3);
       expect(controller.dueCount, 0);
 
       await controller.loadDefaultCards(forceReload: true);
-      expect(reads, 2);
-      expect(controller.cards.single.repetitions, 0);
+      expect(reads, 1);
+      expect(controller.cards.single.repetitions, 3);
     },
   );
 
@@ -142,7 +148,7 @@ void main() {
     'Dùng model chung để nạp song ngữ camelCase và lịch ôn đã lưu',
     () async {
       final reviewDate = DateTime.utc(2030, 1, 15);
-      final controller = CardController(
+      final controller = _controller(
         assetBundle: _TestBundle(
           () async => jsonEncode([
             {
@@ -190,7 +196,7 @@ void main() {
   }.entries) {
     test('${invalid.key}: báo lỗi và giữ nguyên dữ liệu đang có', () async {
       var content = jsonEncode([_record()]);
-      final controller = CardController(
+      final controller = _controller(
         assetBundle: _TestBundle(() async => content),
       );
       addTearDown(controller.dispose);
@@ -208,7 +214,7 @@ void main() {
 
   testWidgets('Hiển thị đang tải rồi chuyển sang danh sách', (tester) async {
     final pending = Completer<String>();
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() => pending.future),
     );
     addTearDown(controller.dispose);
@@ -226,7 +232,7 @@ void main() {
   });
 
   testWidgets('Chạm thẻ mở và đóng đáp án', (tester) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() async => jsonEncode([_record()])),
     );
     addTearDown(controller.dispose);
@@ -249,7 +255,7 @@ void main() {
     const front =
         'Từ khóa `const` trong đoạn mã:\n\n```dart\nconst value = 42;\n```';
     const back = 'Kết quả là `42`.\n\n```dart\n  print(value);\n```';
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode([
           {..._record(front: front), 'back': back},
@@ -284,7 +290,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final longCode = "  print('${List.filled(60, 'Dart').join(' ')}');";
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode([
           {
@@ -355,7 +361,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    final controller = CardController();
+    final controller = _controller();
     addTearDown(controller.dispose);
     await tester.runAsync(controller.loadDefaultCards);
     await _showScreen(tester, controller);
@@ -389,7 +395,7 @@ void main() {
 
   testWidgets('Lỗi đọc file có nút thử lại và phục hồi được', (tester) async {
     var shouldFail = true;
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() async {
         if (shouldFail) throw StateError('Asset unavailable');
         return jsonEncode([_record()]);
@@ -409,9 +415,9 @@ void main() {
     expect(controller.loadError, isNull);
   });
 
-  testWidgets('Danh sách rỗng có lối ra bằng nút tải lại', (tester) async {
+  testWidgets('Danh sách rỗng có lối ra bằng form thêm thẻ', (tester) async {
     var content = '[]';
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() async => content),
     );
     addTearDown(controller.dispose);
@@ -419,11 +425,13 @@ void main() {
     await _showScreen(tester, controller);
 
     expect(find.text('Chưa có thẻ nào'), findsOneWidget);
-    content = jsonEncode([_record()]);
-    await tester.tap(find.text('Tải lại'));
+    await tester.tap(find.text('Thêm thẻ mới'));
     await tester.pumpAndSettle();
-
-    expect(find.text('1 thẻ'), findsOneWidget);
+    expect(find.byKey(const ValueKey('manage_editor_front')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa có thẻ nào'), findsOneWidget);
+    expect(controller.cards, isEmpty);
   });
 
   testWidgets('Câu hỏi dài và chữ lớn cuộn được ở màn hình hẹp', (
@@ -435,7 +443,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode([
           _record(
@@ -466,7 +474,7 @@ void main() {
   testWidgets('Gõ để tìm, đổi từ khóa và xóa để khôi phục danh sách', (
     tester,
   ) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode([
           _record(),
@@ -507,7 +515,7 @@ void main() {
   testWidgets('Không tìm thấy có nút xóa để quay về toàn bộ thẻ', (
     tester,
   ) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() async => jsonEncode([_record()])),
     );
     addTearDown(controller.dispose);
@@ -530,7 +538,7 @@ void main() {
   testWidgets('Tìm khi đang ở cuối danh sách vẫn thấy kết quả và đúng đáp án', (
     tester,
   ) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode(
           List.generate(60, (index) {
@@ -577,7 +585,7 @@ void main() {
   testWidgets('Áp dụng đồng thời hai bộ lọc và tìm kiếm trên dữ liệu thật', (
     tester,
   ) async {
-    final controller = CardController();
+    final controller = _controller();
     addTearDown(controller.dispose);
     await tester.runAsync(controller.loadDefaultCards);
     await _showScreen(tester, controller);
@@ -609,7 +617,7 @@ void main() {
   testWidgets('Bộ lọc chỉ thay đổi khi áp dụng; đặt lại giữ từ khóa', (
     tester,
   ) async {
-    final controller = CardController();
+    final controller = _controller();
     addTearDown(controller.dispose);
     await tester.runAsync(controller.loadDefaultCards);
     await _showScreen(tester, controller);
@@ -655,7 +663,7 @@ void main() {
   testWidgets('Không có kết quả kết hợp có thể xóa mọi điều kiện', (
     tester,
   ) async {
-    final controller = CardController();
+    final controller = _controller();
     addTearDown(controller.dispose);
     await tester.runAsync(controller.loadDefaultCards);
     await _showScreen(tester, controller);
@@ -680,7 +688,7 @@ void main() {
   });
 
   testWidgets('Giữ bộ lọc khi chuyển tab rồi quay lại', (tester) async {
-    final controller = CardController();
+    final controller = _controller();
     addTearDown(controller.dispose);
     await tester.runAsync(controller.loadDefaultCards);
     await _showScreen(tester, controller, home: const MainNavScreen());
@@ -703,7 +711,7 @@ void main() {
   testWidgets('Đổi Việt–Anh cập nhật cả hai mặt của thẻ đang mở', (
     tester,
   ) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() async => jsonEncode([_record()])),
     );
     addTearDown(controller.dispose);
@@ -753,7 +761,7 @@ void main() {
     },
   ]) {
     testWidgets(scenario['name'] as String, (tester) async {
-      final controller = CardController(
+      final controller = _controller(
         assetBundle: _TestBundle(
           () async => jsonEncode([
             {
@@ -779,7 +787,7 @@ void main() {
   testWidgets('Đổi ngôn ngữ giữ bộ lọc, từ khóa Việt và thẻ đang mở', (
     tester,
   ) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode([
           _record(),
@@ -823,7 +831,7 @@ void main() {
   testWidgets(
     'Đổi ngôn ngữ thẻ thật có code vẫn giữ định dạng và trạng thái mở',
     (tester) async {
-      final controller = CardController();
+      final controller = _controller();
       addTearDown(controller.dispose);
       await tester.runAsync(controller.loadDefaultCards);
       await _showScreen(tester, controller);
@@ -864,7 +872,7 @@ void main() {
   testWidgets('Học và chấm điểm ở màn hình mới giữ dữ liệu và bộ lọc Bộ thẻ', (
     tester,
   ) async {
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(
         () async => jsonEncode([
           _record(),
@@ -923,7 +931,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    final controller = CardController(
+    final controller = _controller(
       assetBundle: _TestBundle(() async => jsonEncode([_record()])),
     );
     addTearDown(controller.dispose);
@@ -937,6 +945,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('0 / 1 thẻ'), findsOneWidget);
     await tester.ensureVisible(find.text('Xóa bộ lọc'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Xóa bộ lọc'));
     await tester.pumpAndSettle();
     expect(find.text('1 thẻ'), findsOneWidget);

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'controllers/card_controller.dart';
 import 'core/app_theme.dart';
 import 'screens/main_nav_screen.dart';
+import 'services/manage_card_store.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,14 +12,16 @@ void main() {
 }
 
 class FlashcardApp extends StatelessWidget {
-  const FlashcardApp({super.key});
+  const FlashcardApp({super.key, this.cardStore});
+
+  final ManageCardStore? cardStore;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => CardController()..loadDefaultCards(),
+          create: (_) => CardController(store: cardStore)..loadDefaultCards(),
         ),
       ],
       child: MaterialApp(

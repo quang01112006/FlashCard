@@ -7,6 +7,7 @@ import '../logic/sm2_algorithm.dart';
 import '../models/flashcard.dart';
 import '../widgets/code_text_view.dart';
 import '../widgets/flip_card_widget.dart';
+import '../services/manage_card_store.dart';
 
 class StudyScreen extends StatefulWidget {
   const StudyScreen({super.key});
@@ -20,6 +21,7 @@ class _StudyScreenState extends State<StudyScreen> {
   bool _isAnswerRevealed = false;
   bool _isSessionInitialized = false;
   List<Flashcard> _sessionCards = [];
+  bool _isRating = false;
 
   GlobalKey<FlipCardWidgetState> _flipCardKey =
       GlobalKey<FlipCardWidgetState>();
@@ -32,14 +34,46 @@ class _StudyScreenState extends State<StudyScreen> {
         ? controller.dueCards
         : controller.cards;
 
+    final previousCurrentId = _currentIndex < _sessionCards.length
+        ? _sessionCards[_currentIndex].id
+        : null;
     if (availableCards.isNotEmpty) {
       if (!_isSessionInitialized || _sessionCards.isEmpty) {
         _sessionCards = List.from(availableCards);
+        _currentIndex = 0;
         _isSessionInitialized = true;
+      } else {
+        // Đồng bộ nội dung và bỏ thẻ đã xóa, giữ các thẻ đã học trong phiên.
+        final live = {for (final card in controller.cards) card.id: card};
+        final knownIds = _sessionCards.map((card) => card.id).toSet();
+        final completed = _sessionCards
+            .take(_currentIndex)
+            .where((card) => live.containsKey(card.id))
+            .map((card) => live[card.id]!)
+            .toList();
+        final pending = _sessionCards
+            .skip(_currentIndex)
+            .where((card) => live.containsKey(card.id))
+            .map((card) => live[card.id]!)
+            .toList();
+        _sessionCards = [
+          ...completed,
+          ...pending,
+          ...availableCards.where((card) => !knownIds.contains(card.id)),
+        ];
+        _currentIndex = completed.length;
       }
     } else if (!controller.isLoading) {
       _sessionCards = [];
+      _currentIndex = 0;
       _isSessionInitialized = true;
+    }
+    final currentId = _currentIndex < _sessionCards.length
+        ? _sessionCards[_currentIndex].id
+        : null;
+    if (currentId != previousCurrentId) {
+      _isAnswerRevealed = false;
+      _flipCardKey = GlobalKey<FlipCardWidgetState>();
     }
   }
 
@@ -66,7 +100,10 @@ class _StudyScreenState extends State<StudyScreen> {
     }
   }
 
-  void _onRateCard(ReviewRating rating, Flashcard currentCard) {
+  Future<void> _onRateCard(ReviewRating rating, Flashcard currentCard) async {
+    final controller = context.read<CardController>();
+    if (_isRating || controller.isSaving) return;
+    setState(() => _isRating = true);
     // 1. Chạy thuật toán SM-2 tính toán chu kỳ mới
     final sm2Result = SM2Algorithm.calculateWithRating(
       currentRepetitions: currentCard.repetitions,
@@ -84,18 +121,31 @@ class _StudyScreenState extends State<StudyScreen> {
     );
 
     // 3. Cập nhật vào Store chung và danh sách phiên học
-    context.read<CardController>().updateCard(updatedCard);
-    _sessionCards[_currentIndex] = updatedCard;
-
-    // 4. Chuyển sang câu tiếp theo, reset trạng thái lật thẻ
-    setState(() {
-      _currentIndex++;
-      _isAnswerRevealed = false;
-      _flipCardKey =
-          GlobalKey<
-            FlipCardWidgetState
-          >(); // Tạo key mới để thẻ câu sau tự động úp về mặt trước
-    });
+    try {
+      await controller.updateCard(updatedCard);
+      if (!mounted) return;
+      final index = _sessionCards.indexWhere(
+        (card) => card.id == currentCard.id,
+      );
+      setState(() {
+        if (index >= 0) _currentIndex = index + 1;
+        _isAnswerRevealed = false;
+        _flipCardKey = GlobalKey<FlipCardWidgetState>();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is CardOperationException
+                ? error.message
+                : 'Không thể lưu kết quả ôn tập. Vui lòng thử lại.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isRating = false);
+    }
   }
 
   @override
@@ -456,7 +506,9 @@ class _StudyScreenState extends State<StudyScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        onPressed: () => _onRateCard(rating, currentCard),
+        onPressed: _isRating || context.read<CardController>().isSaving
+            ? null
+            : () => _onRateCard(rating, currentCard),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

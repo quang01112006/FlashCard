@@ -1,18 +1,27 @@
 import 'dart:convert';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/flashcard.dart';
+import '../services/manage_card_filter.dart';
+import '../services/manage_card_store.dart';
 
 class CardController extends ChangeNotifier {
-  CardController({AssetBundle? assetBundle})
-    : _assetBundle = assetBundle ?? rootBundle;
+  CardController({AssetBundle? assetBundle, ManageCardStore? store})
+    : _assetBundle = assetBundle ?? rootBundle,
+      _store = store ?? HiveManageCardStore();
 
   final AssetBundle _assetBundle;
+  final ManageCardStore _store;
   final List<Flashcard> _cards = [];
   bool _isLoading = false;
   String? _loadError;
+  bool _hasLoaded = false;
+  bool _isSaving = false;
+  bool _disposed = false;
+  int _idSequence = 0;
 
   // Trạng thái đa ngôn ngữ dùng chung toàn app (Mặc định: Tiếng Việt)
   bool _isEnglish = false;
@@ -20,8 +29,9 @@ class CardController extends ChangeNotifier {
   // Trạng thái giao diện Tối / Sáng dùng chung toàn app
   bool _isDarkMode = false;
 
-  List<Flashcard> get cards => _cards;
+  List<Flashcard> get cards => UnmodifiableListView(_cards);
   bool get isLoading => _isLoading;
+  bool get isSaving => _isSaving;
   String? get loadError => _loadError;
   bool get isEnglish => _isEnglish;
   bool get isDarkMode => _isDarkMode;
@@ -43,52 +53,38 @@ class CardController extends ChangeNotifier {
     return topics;
   }
 
-  /// Nạp dữ liệu 300 câu hỏi môn học từ assets/default_cards.json
-  /// Không nạp đè thẻ đang có trừ khi yêu cầu tải lại rõ ràng.
-  /// Member Data / Storage sẽ bổ sung đọc dữ liệu đã lưu trước bước này.
+  /// Ưu tiên bộ thẻ đã lưu; JSON chỉ dùng khi chưa có dữ liệu trên máy.
+  /// forceReload tải lại storage, không khôi phục/xóa thay đổi của người dùng.
   Future<void> loadDefaultCards({bool forceReload = false}) async {
-    if (_isLoading || (_cards.isNotEmpty && !forceReload)) return;
+    if (_disposed || _isLoading || _isSaving || (_hasLoaded && !forceReload)) {
+      return;
+    }
 
     _isLoading = true;
     _loadError = null;
-    notifyListeners();
+    _notify();
 
     try {
-      final json = jsonDecode(
-        await _assetBundle.loadString('assets/default_cards.json'),
-      );
-      if (json is! List) {
-        throw const FormatException('Expected a list of flashcards.');
-      }
-
-      final ids = <String>{};
-      final loadedCards = json.map((entry) {
-        if (entry is! Map<String, dynamic>) {
-          throw const FormatException('Invalid flashcard record.');
-        }
-        for (final field in ['id', 'front', 'back']) {
-          final value = entry[field];
-          if (value is! String || value.trim().isEmpty) {
-            throw FormatException('Invalid flashcard field: $field.');
-          }
-        }
-        final id = entry['id'] as String;
-        if (!ids.add(id)) {
-          throw const FormatException('Duplicate flashcard ID.');
-        }
-        return Flashcard.fromJson(entry);
-      }).toList();
+      final savedCards = await _store.read();
+      final loadedCards =
+          savedCards ??
+          decodeManageCards(
+            jsonDecode(
+              await _assetBundle.loadString('assets/default_cards.json'),
+            ),
+          );
 
       // Chỉ thay danh sách sau khi toàn bộ dữ liệu đã được đọc hợp lệ.
       _cards
         ..clear()
         ..addAll(loadedCards);
+      _hasLoaded = true;
     } catch (e) {
       _loadError = 'Không thể tải bộ thẻ. Vui lòng thử lại.';
-      debugPrint('Lỗi nạp default_cards.json: $e');
+      debugPrint('Lỗi nạp bộ thẻ: $e');
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -121,25 +117,128 @@ class CardController extends ChangeNotifier {
     }
   }
 
-  /// TODO [Người 3 phụ trách Quản lý thẻ]:
-  /// Viết logic thêm thẻ mới vào hệ thống
-  void addCard(Flashcard card) {
-    // TODO: Người 3 điền code thêm thẻ ở đây
+  String createCardId() {
+    String id;
+    do {
+      id = 'USER-${DateTime.now().microsecondsSinceEpoch}-${_idSequence++}';
+    } while (_cards.any((card) => card.id == id));
+    return id;
   }
 
-  /// TODO [Người 3 phụ trách Quản lý thẻ]:
-  /// Viết logic xóa thẻ theo id khỏi hệ thống
-  void deleteCard(String id) {
-    // TODO: Người 3 điền code xóa thẻ ở đây
+  Future<Flashcard> addCard(Flashcard card) async {
+    await _persist((next) {
+      _validateManualCard(card);
+      if (next.any((existing) => existing.id == card.id)) {
+        throw const CardOperationException(
+          'Mã thẻ bị trùng. Vui lòng thử lại.',
+        );
+      }
+      next.insert(0, card);
+    });
+    return card;
   }
 
-  /// Cập nhật thẻ sau khi chấm điểm SM-2 (Leader gọi ở Tab Học thẻ)
-  void updateCard(Flashcard updatedCard) {
-    final index = _cards.indexWhere((c) => c.id == updatedCard.id);
-    if (index != -1) {
-      _cards[index] = updatedCard;
-      notifyListeners();
+  /// Chỉ sửa nội dung; giữ lịch ôn mới nhất, kể cả khi form mở từ trước.
+  Future<Flashcard> editCard(Flashcard edited) async {
+    late Flashcard result;
+    await _persist((next) {
+      _validateManualCard(edited);
+      final index = _indexOf(next, edited.id);
+      result = next[index].copyWith(
+        topicCode: edited.topicCode,
+        level: edited.level,
+        front: edited.front,
+        back: edited.back,
+        frontEn: edited.frontEn ?? '',
+        backEn: edited.backEn ?? '',
+      );
+      next[index] = result;
+    });
+    return result;
+  }
+
+  Future<void> deleteCard(String id) => _persist((next) {
+    next.removeAt(_indexOf(next, id));
+  });
+
+  /// Lưu kết quả SM-2, giữ nội dung mới nhất của thẻ.
+  Future<void> updateCard(Flashcard updatedCard) => _persist((next) {
+    final index = _indexOf(next, updatedCard.id);
+    next[index] = next[index].copyWith(
+      repetitions: updatedCard.repetitions,
+      interval: updatedCard.interval,
+      easeFactor: updatedCard.easeFactor,
+      nextReviewDate: updatedCard.nextReviewDate,
+    );
+  });
+
+  int _indexOf(List<Flashcard> cards, String id) {
+    final index = cards.indexWhere((card) => card.id == id);
+    if (index < 0) {
+      throw const CardOperationException(
+        'Thẻ không còn tồn tại. Vui lòng tải lại danh sách.',
+      );
     }
+    return index;
+  }
+
+  void _validateManualCard(Flashcard card) {
+    if (card.id.trim().isEmpty ||
+        card.front.trim().isEmpty ||
+        card.back.trim().isEmpty) {
+      throw const CardOperationException(
+        'Vui lòng nhập đầy đủ câu hỏi và đáp án.',
+      );
+    }
+    if (!ManageCardFilter.topicCodes.contains(card.topicCode) ||
+        !ManageCardFilter.levels.contains(card.level)) {
+      throw const CardOperationException(
+        'Vui lòng chọn khối kiến thức và mức độ hợp lệ.',
+      );
+    }
+  }
+
+  Future<void> _persist(void Function(List<Flashcard>) change) async {
+    if (_disposed || !_hasLoaded || _isLoading || _loadError != null) {
+      throw const CardOperationException(
+        'Bộ thẻ chưa tải xong. Vui lòng thử lại.',
+      );
+    }
+    if (_isSaving) {
+      throw const CardOperationException(
+        'Đang lưu thay đổi khác. Vui lòng đợi.',
+      );
+    }
+    _isSaving = true;
+    _notify();
+    try {
+      final next = List<Flashcard>.of(_cards);
+      change(next);
+      await _store.write(next);
+      _cards
+        ..clear()
+        ..addAll(next);
+    } on CardOperationException {
+      rethrow;
+    } catch (error) {
+      debugPrint('Lỗi lưu bộ thẻ: $error');
+      throw const CardOperationException(
+        'Không thể lưu thay đổi. Vui lòng thử lại.',
+      );
+    } finally {
+      _isSaving = false;
+      _notify();
+    }
+  }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   /// TODO [Người 3 phụ trách Quản lý thẻ]:

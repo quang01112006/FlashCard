@@ -8,6 +8,8 @@ import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
 import '../widgets/code_text_view.dart';
 import '../widgets/manage_card_filters_sheet.dart';
+import '../widgets/manage_delete_card_dialog.dart';
+import 'manage_card_editor_screen.dart';
 
 class ManageCardsScreen extends StatefulWidget {
   const ManageCardsScreen({super.key});
@@ -21,6 +23,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   final _listController = ScrollController();
   String _query = '';
   ManageCardFilter _filter = const ManageCardFilter();
+  String? _recentCardId;
 
   @override
   void dispose() {
@@ -30,7 +33,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   }
 
   void _onSearchChanged(String value) {
-    setState(() => _query = value);
+    setState(() {
+      _query = value;
+      _recentCardId = null;
+    });
     if (_listController.hasClients) _listController.jumpTo(0);
   }
 
@@ -48,7 +54,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       builder: (_) => ManageCardFiltersSheet(initialFilter: _filter),
     );
     if (!mounted || selected == null) return;
-    setState(() => _filter = selected);
+    setState(() {
+      _filter = selected;
+      _recentCardId = null;
+    });
     if (_listController.hasClients) _listController.jumpTo(0);
   }
 
@@ -61,12 +70,65 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     if (_listController.hasClients) _listController.jumpTo(0);
   }
 
+  Future<void> _openEditor([Flashcard? card]) async {
+    FocusScope.of(context).unfocus();
+    ScaffoldMessenger.of(context).clearSnackBars();
+    final id = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ManageCardEditorScreen(
+          initialCard: card,
+          topicCode: _filter.topicCode,
+          level: _filter.level,
+        ),
+      ),
+    );
+    if (!mounted || id == null) return;
+    _searchController.clear();
+    setState(() {
+      _query = '';
+      _filter = const ManageCardFilter();
+      _recentCardId = id;
+    });
+    if (_listController.hasClients) _listController.jumpTo(0);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(card == null ? 'Đã thêm thẻ mới.' : 'Đã lưu thay đổi.'),
+      ),
+    );
+  }
+
+  Future<void> _deleteCard(Flashcard card) async {
+    final deleted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ManageDeleteCardDialog(
+        card: card,
+        controller: context.read<CardController>(),
+      ),
+    );
+    if (!mounted || deleted != true) return;
+    if (_recentCardId == card.id) setState(() => _recentCardId = null);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Đã xóa thẻ.')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<CardController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bộ thẻ')),
+      appBar: AppBar(
+        title: const Text('Bộ thẻ'),
+        actions: [
+          if (!controller.isLoading && controller.loadError == null)
+            IconButton(
+              key: const ValueKey('manage_add_card'),
+              tooltip: 'Thêm thẻ',
+              onPressed: controller.isSaving ? null : () => _openEditor(),
+              icon: const Icon(Icons.add),
+            ),
+        ],
+      ),
       body: SafeArea(child: _buildBody(controller)),
     );
   }
@@ -100,13 +162,15 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       return _ManageCardsMessage(
         icon: Icons.style_outlined,
         title: 'Chưa có thẻ nào',
-        message: 'Bạn có thể tải lại để kiểm tra dữ liệu bộ thẻ.',
-        actionLabel: 'Tải lại',
-        onAction: () => controller.loadDefaultCards(forceReload: true),
+        message: 'Thêm thẻ mới để bắt đầu xây dựng bộ thẻ của bạn.',
+        actionLabel: 'Thêm thẻ mới',
+        onAction: controller.isSaving ? () {} : () => _openEditor(),
       );
     }
 
     final results = ManageCardSearch.search(_filter.apply(cards), _query);
+    final recentIndex = results.indexWhere((card) => card.id == _recentCardId);
+    if (recentIndex > 0) results.insert(0, results.removeAt(recentIndex));
     final isSearching = _query.trim().isNotEmpty;
     final hasCriteria = isSearching || _filter.isActive;
 
@@ -211,6 +275,13 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                     key: ValueKey(results[index].id),
                     card: results[index],
                     isEnglish: controller.isEnglish,
+                    highlighted: results[index].id == _recentCardId,
+                    onEdit: controller.isSaving
+                        ? null
+                        : () => _openEditor(results[index]),
+                    onDelete: controller.isSaving
+                        ? null
+                        : () => _deleteCard(results[index]),
                   ),
                 ),
         ),
@@ -224,10 +295,16 @@ class _ManageCardItem extends StatelessWidget {
     super.key,
     required this.card,
     required this.isEnglish,
+    required this.onEdit,
+    required this.onDelete,
+    this.highlighted = false,
   });
 
   final Flashcard card;
   final bool isEnglish;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final bool highlighted;
 
   String _textForLanguage(String vietnamese, String? english) {
     return isEnglish && english != null && english.trim().isNotEmpty
@@ -238,6 +315,12 @@ class _ManageCardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: highlighted
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.primary, width: 2),
+            )
+          : null,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         key: PageStorageKey('manage_card_${card.id}'),
@@ -278,6 +361,30 @@ class _ManageCardItem extends StatelessWidget {
               baseStyle: AppTextStyles.body,
               textAlign: TextAlign.left,
             ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            alignment: WrapAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                ),
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Sửa thẻ'),
+              ),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  minimumSize: const Size(48, 48),
+                ),
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Xóa thẻ'),
+              ),
+            ],
           ),
         ],
       ),
