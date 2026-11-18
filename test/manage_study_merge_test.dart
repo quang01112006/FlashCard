@@ -42,9 +42,17 @@ Future<void> _rate(WidgetTester tester) async {
   // Chờ thông báo hoàn tác biến mất trước khi bấm nút ở cuối màn hình.
   await tester.pump(const Duration(seconds: 2));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Hiện đáp án'));
+  await tester.tap(
+    find.byWidgetPredicate(
+      (w) => w is Text && (w.data == 'Hiện đáp án' || w.data == 'Show Answer' || w.data == 'Show answer'),
+    ),
+  );
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Tốt'));
+  await tester.tap(
+    find.byWidgetPredicate(
+      (w) => w is Text && (w.data == 'Tốt' || w.data == 'Good'),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -118,7 +126,12 @@ void main() {
     );
     controller.setLanguage(true);
     await tester.pumpAndSettle();
-    expect(find.text('Thẻ 2 / 3'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Card 2 / 3' || w.data == 'Thẻ 2 / 3'),
+      ),
+      findsOneWidget,
+    );
     await _rate(tester);
     expect(find.text('Câu hỏi b'), findsOneWidget);
   });

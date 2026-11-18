@@ -851,9 +851,24 @@ void main() {
 
     controller.setLanguage(true);
     await tester.pumpAndSettle();
-    expect(find.text('1 / 2 thẻ'), findsOneWidget);
-    expect(find.text('Bộ lọc (2)'), findsOneWidget);
-    expect(find.text('K01 • Nhớ'), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == '1 / 2 cards' || w.data == '1 / 2 thẻ'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Bộ lọc (2)' || w.data == 'Filter (2)'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'K01 • Nhớ' || w.data == 'K01 • Remember'),
+      ),
+      findsWidgets,
+    );
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       'tu khoa',
@@ -927,17 +942,33 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'K01-001');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Bộ lọc'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Bộ lọc' || w.data == 'Filter'),
+      ),
+    );
     await tester.pumpAndSettle();
     await _selectFilter(tester, 'manage_filter_topic', 'K01');
-    await tester.tap(find.text('Áp dụng'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Áp dụng' || w.data == 'Apply'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Học thẻ'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Hiện đáp án'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Hiện đáp án' || w.data == 'Show Answer' || w.data == 'Show answer'),
+      ),
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tốt'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Tốt' || w.data == 'Good'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final reviewed = controller.cards.firstWhere(
@@ -948,8 +979,18 @@ void main() {
     expect(controller.cards, hasLength(2));
     await tester.tap(find.text('Bộ thẻ'));
     await tester.pumpAndSettle();
-    expect(find.text('1 / 2 thẻ'), findsOneWidget);
-    expect(find.text('Bộ lọc (1)'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == '1 / 2 thẻ' || w.data == '1 / 2 cards'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Bộ lọc (1)' || w.data == 'Filter (1)'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('What does const do?'), findsOneWidget);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,

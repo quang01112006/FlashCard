@@ -24,6 +24,7 @@ void main() {
                   width: 260,
                   child: ManageCardActions(
                     showMove: true,
+                    isEnglish: dark,
                     onEdit: () => edits++,
                     onMove: () => moves++,
                     onDelete: () => deletes++,
@@ -43,9 +44,9 @@ void main() {
           expect(other.height, first.height);
           expect(other.top, first.top);
         }
-        await tester.tap(find.text('Sửa thẻ'));
-        await tester.tap(find.text('Chuyển bộ'));
-        await tester.tap(find.text('Xóa thẻ'));
+        await tester.tap(find.text(dark ? 'Edit card' : 'Sửa thẻ'));
+        await tester.tap(find.text(dark ? 'Move deck' : 'Chuyển bộ'));
+        await tester.tap(find.text(dark ? 'Delete card' : 'Xóa thẻ'));
         expect([edits, moves, deletes], [1, 1, 1]);
         expect(tester.takeException(), isNull);
       },

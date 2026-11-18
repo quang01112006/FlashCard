@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'manage_select_field.dart';
+import '../controllers/card_controller.dart';
+import '../l10n/app_strings.dart';
 
 import '../services/manage_card_filter.dart';
 
@@ -28,6 +31,8 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
   Widget build(BuildContext context) => _buildScreen(context);
 
   Widget _buildScreen(BuildContext context) {
+    final isEnglish = context.watch<CardController>().isEnglish;
+    final strings = AppStrings(isEnglish);
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -36,12 +41,15 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Lọc bộ thẻ', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              isEnglish ? 'Filter cards' : 'Lọc bộ thẻ',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 20),
             _buildDropdown(
               fieldKey: 'manage_filter_topic',
-              label: 'Chủ đề',
-              allLabel: 'Tất cả chủ đề',
+              label: isEnglish ? 'Topic' : 'Chủ đề',
+              allLabel: isEnglish ? 'All topics' : 'Tất cả chủ đề',
               selected: _topicCode,
               options: {
                 if (widget.includeFlutterTopics) ...ManageCardFilter.topicCodes,
@@ -53,17 +61,18 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
             const SizedBox(height: 16),
             _buildDropdown(
               fieldKey: 'manage_filter_level',
-              label: 'Mức độ',
-              allLabel: 'Tất cả mức độ',
+              label: isEnglish ? 'Level' : 'Mức độ',
+              allLabel: isEnglish ? 'All levels' : 'Tất cả mức độ',
               selected: _level,
               options: ManageCardFilter.levels,
+              displayLabel: (opt) => strings.levelLabel(opt),
               onChanged: (value) => setState(() => _level = value),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => Navigator.of(context)
                   .pop(ManageCardFilter(topicCode: _topicCode, level: _level)),
-              child: const Text('Áp dụng'),
+              child: Text(isEnglish ? 'Apply' : 'Áp dụng'),
             ),
             const SizedBox(height: 8),
             TextButton(
@@ -72,7 +81,7 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
                 _topicCode = null;
                 _level = null;
               }),
-              child: const Text('Đặt lại'),
+              child: Text(isEnglish ? 'Reset' : 'Đặt lại'),
             ),
           ],
         ),
@@ -87,15 +96,20 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
     required String? selected,
     required List<String> options,
     required ValueChanged<String?> onChanged,
+    String Function(String)? displayLabel,
   }) {
     return ManageSelectField<String>(
+      isEnglish: context.read<CardController>().isEnglish,
       key: ValueKey(fieldKey),
       initialValue: selected ?? '',
       decoration: InputDecoration(labelText: label),
       items: [
         DropdownMenuItem(value: '', child: Text(allLabel)),
         for (final option in options)
-          DropdownMenuItem(value: option, child: Text(option)),
+          DropdownMenuItem(
+            value: option,
+            child: Text(displayLabel?.call(option) ?? option),
+          ),
       ],
       onChanged: (value) => onChanged(value == '' ? null : value),
     );

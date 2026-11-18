@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
 import '../core/app_theme.dart';
+import '../l10n/app_strings.dart';
 import '../models/flashcard.dart';
 import '../services/csv_service.dart';
 import '../services/ai_card_service.dart';
@@ -286,21 +287,25 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<CardController>();
+    final isEnglish = controller.isEnglish;
+    final strings = AppStrings(isEnglish);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.deckId == null
-              ? 'Bộ thẻ'
+              ? (isEnglish ? 'Decks' : 'Bộ thẻ')
               : controller.deckById(widget.deckId!)?.name ??
-                    'Bộ thẻ không còn tồn tại',
+                    (isEnglish
+                        ? 'Deck no longer exists'
+                        : 'Bộ thẻ không còn tồn tại'),
         ),
         actions: [
           if (widget.deckId != null &&
               controller.deckById(widget.deckId!) != null)
             IconButton(
               key: const ValueKey('manage_study_this_deck'),
-              tooltip: 'Học bộ này',
+              tooltip: strings.studyThisDeck,
               icon: const Icon(Icons.school_outlined),
               onPressed: controller.isSaving || controller.isLoading || _csvBusy
                   ? null
@@ -323,7 +328,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                   controller.deckById(widget.deckId!) != null))
             IconButton(
               key: const ValueKey('manage_add_card'),
-              tooltip: 'Thêm thẻ',
+              tooltip: isEnglish ? 'Add card' : 'Thêm thẻ',
               onPressed: controller.isSaving || _csvBusy
                   ? null
                   : () => _openEditor(),
@@ -335,7 +340,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                   controller.deckById(widget.deckId!) != null))
             PopupMenuButton<_CsvAction>(
               key: const ValueKey('manage_csv_menu'),
-              tooltip: 'Nhập / xuất CSV',
+              tooltip: isEnglish ? 'Import / export CSV' : 'Nhập / xuất CSV',
               enabled: !_csvBusy && !controller.isSaving,
               icon: const Icon(Icons.import_export),
               onSelected: _handleCsv,
@@ -347,14 +352,14 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                       ManageAiStrings(controller.isEnglish).text('Tạo thẻ AI'),
                     ),
                   ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: _CsvAction.import,
-                  child: Text('Nhập CSV'),
+                  child: Text(isEnglish ? 'Import CSV' : 'Nhập CSV'),
                 ),
                 PopupMenuItem(
                   value: _CsvAction.export,
                   enabled: _cards(controller).isNotEmpty,
-                  child: const Text('Xuất CSV'),
+                  child: Text(isEnglish ? 'Export CSV' : 'Xuất CSV'),
                 ),
               ],
             ),
@@ -434,13 +439,17 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
             textInputAction: TextInputAction.search,
             style: AppTextStyles.body,
             decoration: InputDecoration(
-              labelText: 'Tìm kiếm thẻ',
-              hintText: 'Câu hỏi, đáp án, chủ đề hoặc mã thẻ',
+              labelText: controller.isEnglish ? 'Search cards' : 'Tìm kiếm thẻ',
+              hintText: controller.isEnglish
+                  ? 'Question, answer, topic or card ID'
+                  : 'Câu hỏi, đáp án, chủ đề hoặc mã thẻ',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _query.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Xóa từ khóa',
+                      tooltip: controller.isEnglish
+                          ? 'Clear search'
+                          : 'Xóa từ khóa',
                       constraints: const BoxConstraints(
                         minWidth: 48,
                         minHeight: 48,
@@ -465,8 +474,12 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                 children: [
                   Text(
                     hasCriteria
-                        ? '${results.length} / ${cards.length} thẻ'
-                        : '${cards.length} thẻ',
+                        ? (controller.isEnglish
+                              ? '${results.length} / ${cards.length} cards'
+                              : '${results.length} / ${cards.length} thẻ')
+                        : (controller.isEnglish
+                              ? '${cards.length} cards'
+                              : '${cards.length} thẻ'),
                     style: AppTextStyles.subHeading,
                   ),
                   OutlinedButton.icon(
@@ -477,8 +490,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                     icon: const Icon(Icons.filter_list),
                     label: Text(
                       _filter.isActive
-                          ? 'Bộ lọc (${_filter.activeCount})'
-                          : 'Bộ lọc',
+                          ? (controller.isEnglish
+                                ? 'Filter (${_filter.activeCount})'
+                                : 'Bộ lọc (${_filter.activeCount})')
+                          : (controller.isEnglish ? 'Filter' : 'Bộ lọc'),
                     ),
                   ),
                 ],
@@ -494,8 +509,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                 ),
               ],
               const SizedBox(height: 4),
-              const Text(
-                'Chạm vào thẻ để xem đáp án và giải thích.',
+              Text(
+                controller.isEnglish
+                    ? 'Tap card to view answer and explanation.'
+                    : 'Chạm vào thẻ để xem đáp án và giải thích.',
                 style: AppTextStyles.caption,
               ),
             ],
@@ -604,7 +621,7 @@ class _ManageCardItem extends StatelessWidget {
           child: Text(
             [
               card.topicCode,
-              card.level,
+              AppStrings(isEnglish).levelLabel(card.level),
             ].where((value) => value.isNotEmpty).join(' • '),
             style: Theme.of(context).textTheme.bodySmall,
           ),
@@ -612,7 +629,7 @@ class _ManageCardItem extends StatelessWidget {
         children: [
           Divider(color: Theme.of(context).colorScheme.outlineVariant),
           Text(
-            'Đáp án & giải thích',
+            isEnglish ? 'Answer & explanation' : 'Đáp án & giải thích',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -627,6 +644,7 @@ class _ManageCardItem extends StatelessWidget {
             ),
           ),
           ManageCardActions(
+            isEnglish: isEnglish,
             showMove: showMove,
             onEdit: onEdit,
             onMove: onMove,

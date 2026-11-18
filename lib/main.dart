@@ -24,11 +24,17 @@ class FlashcardApp extends StatelessWidget {
           create: (_) => CardController(store: cardStore)..loadDefaultCards(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Flashcard SM-2',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const MainNavScreen(),
+      child: Consumer<CardController>(
+        builder: (context, controller, _) {
+          return MaterialApp(
+            title: 'Flashcard SM-2',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: controller.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: const MainNavScreen(),
+          );
+        },
       ),
     );
   }

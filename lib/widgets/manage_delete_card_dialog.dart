@@ -49,9 +49,10 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEnglish = widget.controller.isEnglish;
     final translated = widget.card.frontEn;
     final question =
-        widget.controller.isEnglish &&
+        isEnglish &&
             translated != null &&
             translated.trim().isNotEmpty
         ? translated
@@ -60,7 +61,7 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
       canPop: !_deleting,
       child: AlertDialog(
         scrollable: true,
-        title: const Text('Xóa thẻ?'),
+        title: Text(isEnglish ? 'Delete card?' : 'Xóa thẻ?'),
         content: SizedBox(
           width: 400,
           child: Column(
@@ -72,7 +73,9 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
                 textAlign: TextAlign.left,
               ),
               const SizedBox(height: 12),
-              const Text('Thẻ sẽ bị xóa khỏi bộ thẻ và danh sách ôn tập.'),
+              Text(isEnglish
+                  ? 'This card will be removed from the deck and study queue.'
+                  : 'Thẻ sẽ bị xóa khỏi bộ thẻ và danh sách ôn tập.'),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Semantics(
@@ -91,7 +94,7 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
             onPressed: _deleting
                 ? null
                 : () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
+            child: Text(isEnglish ? 'Cancel' : 'Hủy'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -99,7 +102,9 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
               minimumSize: const Size(48, 48),
             ),
             onPressed: _deleting ? null : _delete,
-            child: Text(_deleting ? 'Đang xóa...' : 'Xóa thẻ'),
+            child: Text(_deleting
+                ? (isEnglish ? 'Deleting...' : 'Đang xóa...')
+                : (isEnglish ? 'Delete card' : 'Xóa thẻ')),
           ),
         ],
       ),

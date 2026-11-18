@@ -8,12 +8,14 @@ class ManageCardActions extends StatelessWidget {
     required this.onDelete,
     this.onMove,
     this.showMove = false,
+    this.isEnglish = false,
   });
 
   final VoidCallback? onEdit;
   final VoidCallback? onMove;
   final VoidCallback? onDelete;
   final bool showMove;
+  final bool isEnglish;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -76,11 +78,16 @@ class ManageCardActions extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                action('Sửa thẻ', Icons.edit_outlined, onEdit, colors.primary),
+                action(
+                  isEnglish ? 'Edit card' : 'Sửa thẻ',
+                  Icons.edit_outlined,
+                  onEdit,
+                  colors.primary,
+                ),
                 if (showMove) ...[
                   const SizedBox(width: 4),
                   action(
-                    'Chuyển bộ',
+                    isEnglish ? 'Move deck' : 'Chuyển bộ',
                     Icons.drive_file_move_outlined,
                     onMove,
                     colors.onSurfaceVariant,
@@ -88,7 +95,7 @@ class ManageCardActions extends StatelessWidget {
                 ],
                 const SizedBox(width: 4),
                 action(
-                  'Xóa thẻ',
+                  isEnglish ? 'Delete card' : 'Xóa thẻ',
                   Icons.delete_outline_rounded,
                   onDelete,
                   colors.error,

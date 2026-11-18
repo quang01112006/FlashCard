@@ -62,6 +62,7 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
 
   Widget _buildScreen(BuildContext context) {
     final controller = context.watch<CardController>();
+    final isEnglish = controller.isEnglish;
     final destinations = controller.decks
         .where((deck) => deck.id != widget.deck.id)
         .toList();
@@ -70,7 +71,11 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
       canPop: !_saving,
       child: AlertDialog(
         scrollable: true,
-        title: Text(moving ? 'Chuyển thẻ' : 'Xóa bộ thẻ?'),
+        title: Text(
+          moving
+              ? (isEnglish ? 'Move card' : 'Chuyển thẻ')
+              : (isEnglish ? 'Delete deck?' : 'Xóa bộ thẻ?'),
+        ),
         content: SizedBox(
           width: 400,
           child: Column(
@@ -79,13 +84,21 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
             children: [
               Text(
                 moving
-                    ? 'Thẻ sẽ chuyển khỏi “${widget.deck.name}”. Nội dung và lịch ôn được giữ nguyên.'
-                    : 'Xóa bộ “${controller.deckById(widget.deck.id)?.name ?? widget.deck.name}” cùng toàn bộ ${controller.cardsInDeck(widget.deck.id).length} câu hỏi bên trong. Không thể hoàn tác.',
+                    ? (isEnglish
+                        ? 'Card will be moved from "${widget.deck.name}". Content and review schedule are preserved.'
+                        : 'Thẻ sẽ chuyển khỏi “${widget.deck.name}”. Nội dung và lịch ôn được giữ nguyên.')
+                    : (isEnglish
+                        ? 'Delete "${controller.deckById(widget.deck.id)?.name ?? widget.deck.name}" and all ${controller.cardsInDeck(widget.deck.id).length} cards inside. This action cannot be undone.'
+                        : 'Xóa bộ “${controller.deckById(widget.deck.id)?.name ?? widget.deck.name}” cùng toàn bộ ${controller.cardsInDeck(widget.deck.id).length} câu hỏi bên trong. Không thể hoàn tác.'),
               ),
               if (moving) ...[
                 const SizedBox(height: 16),
                 if (destinations.isEmpty)
-                  const Text('Hãy tạo một bộ thẻ khác trước khi chuyển.')
+                  Text(
+                    isEnglish
+                        ? 'Please create another deck before moving.'
+                        : 'Hãy tạo một bộ thẻ khác trước khi chuyển.',
+                  )
                 else
                   ManageSelectField<String>(
                     searchableSheet: true,
@@ -95,9 +108,9 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
                         : '${controller.cardsInDeck(id).length} câu hỏi',
                     key: const ValueKey('manage_move_destination'),
                     initialValue: _target,
-                    decoration: const InputDecoration(
-                      labelText: 'Bộ nhận',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: isEnglish ? 'Destination deck' : 'Bộ nhận',
+                      border: const OutlineInputBorder(),
                     ),
                     items: [
                       for (final deck in destinations)
@@ -128,7 +141,7 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
         actions: [
           TextButton(
             onPressed: _saving ? null : () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text(isEnglish ? 'Cancel' : 'Hủy'),
           ),
           TextButton(
             key: const ValueKey('manage_deck_action_confirm'),
@@ -140,10 +153,10 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
                 : _save,
             child: Text(
               _saving
-                  ? 'Đang lưu...'
+                  ? (isEnglish ? 'Saving...' : 'Đang lưu...')
                   : moving
-                  ? 'Chuyển thẻ'
-                  : 'Xóa bộ và câu hỏi',
+                  ? (isEnglish ? 'Move card' : 'Chuyển thẻ')
+                  : (isEnglish ? 'Delete deck and cards' : 'Xóa bộ và câu hỏi'),
             ),
           ),
         ],

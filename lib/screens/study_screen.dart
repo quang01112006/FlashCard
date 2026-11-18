@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
 import '../core/app_theme.dart';
+import '../l10n/app_strings.dart';
 import '../logic/sm2_algorithm.dart';
 import '../models/flashcard.dart';
 import '../widgets/code_text_view.dart';
@@ -11,11 +12,13 @@ import '../services/manage_card_store.dart';
 
 class StudyScreen extends StatefulWidget {
   final String? topicCode; // Tuỳ chọn: truyền mã chủ đề (ví dụ 'K01') để chỉ học riêng chủ đề đó
+  final int? cardLimit;
 
   const StudyScreen({
     super.key,
     this.topicCode,
     this.deckId = 'flutter-default',
+    this.cardLimit,
   });
   final String deckId;
 
@@ -81,7 +84,10 @@ class _StudyScreenState extends State<StudyScreen> {
 
     if (availableCards.isNotEmpty) {
       if (!_isSessionInitialized || _sessionCards.isEmpty) {
-        _sessionCards = List.from(availableCards);
+        final cardsToTake = widget.cardLimit != null && widget.cardLimit! > 0
+            ? availableCards.take(widget.cardLimit!).toList()
+            : List<Flashcard>.from(availableCards);
+        _sessionCards = cardsToTake;
         _currentIndex = 0;
         _isSessionInitialized = true;
       } else {
@@ -221,10 +227,11 @@ class _StudyScreenState extends State<StudyScreen> {
         _flipCardKey = GlobalKey<FlipCardWidgetState>();
         _lastRatedCard = null;
       });
+      final strings = AppStrings(controller.isEnglish);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã hoàn tác câu vừa đánh giá'),
-          duration: Duration(milliseconds: 1500),
+        SnackBar(
+          content: Text(strings.undoSuccess),
+          duration: const Duration(milliseconds: 1500),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -295,13 +302,13 @@ class _StudyScreenState extends State<StudyScreen> {
     );
   }
 
-  Widget _title(String text) {
+  Widget _title(String text, AppStrings strings) {
     final deck = context.read<CardController>().deckById(widget.deckId);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          deck?.name ?? 'Bộ thẻ đã xóa',
+          deck?.name ?? strings.deletedDeck,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 14),
@@ -326,12 +333,13 @@ class _StudyScreenState extends State<StudyScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<CardController>();
     final isEnglish = controller.isEnglish;
+    final strings = AppStrings(isEnglish);
 
     // Trạng thái 0: Đang nạp dữ liệu từ storage / json
     if (controller.isLoading && _sessionCards.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: _title('Học thẻ SM-2'),
+          title: _title(strings.studySm2Title, strings),
           actions: _sessionActions(controller),
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -342,7 +350,7 @@ class _StudyScreenState extends State<StudyScreen> {
     if (_sessionCards.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: _title('Học thẻ SM-2'),
+          title: _title(strings.studySm2Title, strings),
           actions: _sessionActions(controller),
         ),
         body: _scrollableMessage(
@@ -366,13 +374,13 @@ class _StudyScreenState extends State<StudyScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Chưa có thẻ nào trong phiên học!',
+                Text(
+                  strings.noCardsInSession,
                   style: AppTextStyles.subHeading,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Hãy quay lại sau hoặc thêm thẻ mới để bắt đầu học tập.',
+                  strings.noCardsInSessionHint,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: theme.hintColor),
                 ),
@@ -387,7 +395,7 @@ class _StudyScreenState extends State<StudyScreen> {
     if (_currentIndex >= _sessionCards.length) {
       return Scaffold(
         appBar: AppBar(
-          title: _title('Hoàn thành phiên học'),
+          title: _title(strings.sessionCompleted, strings),
           actions: _sessionActions(controller),
         ),
         body: _scrollableMessage(
@@ -403,14 +411,14 @@ class _StudyScreenState extends State<StudyScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Tuyệt vời!',
+                  strings.greatJob,
                   style: AppTextStyles.heading.copyWith(
                     color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Bạn đã hoàn thành phiên ôn tập với ${_sessionCards.length} thẻ.',
+                  strings.completedMessage(_sessionCards.length),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -434,7 +442,7 @@ class _StudyScreenState extends State<StudyScreen> {
                       ? null
                       : _restartSession,
                   icon: const Icon(Icons.replay),
-                  label: const Text('Ôn tập lại từ đầu'),
+                  label: Text(strings.restartStudy),
                 ),
               ],
             ),
@@ -456,7 +464,7 @@ class _StudyScreenState extends State<StudyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _title('Thẻ ${_currentIndex + 1} / ${_sessionCards.length}'),
+        title: _title(strings.cardProgress(_currentIndex + 1, _sessionCards.length), strings),
         actions: _sessionActions(controller),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
@@ -558,23 +566,26 @@ class _StudyScreenState extends State<StudyScreen> {
                         front: _buildCardContainer(
                           card: currentCard,
                           isBack: false,
-                          tag: 'CÂU HỎI',
+                          tag: strings.cardTagQuestion,
                           tagColor: AppColors.primary,
                           content: _getCardFront(currentCard, isEnglish),
-                          hint:
-                              'Chạm vào thẻ hoặc bấm nút Hiện đáp án bên dưới',
+                          hint: strings.tapCardToFlipHint,
                           backgroundColor: frontBgColor,
                           borderColor: borderColor,
+                          strings: strings,
+                          isEnglish: isEnglish,
                         ),
                         back: _buildCardContainer(
                           card: currentCard,
                           isBack: true,
-                          tag: 'ĐÁP ÁN & GIẢI THÍCH',
+                          tag: strings.cardTagAnswer,
                           tagColor: AppColors.secondary,
                           content: _getCardBack(currentCard, isEnglish),
-                          hint: 'Chọn mức độ nhớ bên dưới để lên lịch ôn tiếp theo',
+                          hint: strings.rateCardHint,
                           backgroundColor: backBgColor,
                           borderColor: AppColors.secondary.withOpacity(0.4),
+                          strings: strings,
+                          isEnglish: isEnglish,
                         ),
                       ),
                     ),
@@ -585,9 +596,9 @@ class _StudyScreenState extends State<StudyScreen> {
               const SizedBox(height: 16),
 
               if (!_isAnswerRevealed)
-                _buildShowAnswerButton()
+                _buildShowAnswerButton(strings)
               else
-                _buildRatingButtonsRow(currentCard),
+                _buildRatingButtonsRow(currentCard, strings),
             ],
           ),
         ),
@@ -596,7 +607,7 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   /// Nút "Hiện đáp án" ở mặt trước
-  Widget _buildShowAnswerButton() {
+  Widget _buildShowAnswerButton(AppStrings strings) {
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -611,16 +622,16 @@ class _StudyScreenState extends State<StudyScreen> {
         ),
         onPressed: _revealAnswer,
         icon: const Icon(Icons.visibility_outlined),
-        label: const Text(
-          'Hiện đáp án',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        label: Text(
+          strings.showAnswer,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
   /// 4 nút chấm điểm (Kèm dự báo chu kỳ ngày)
-  Widget _buildRatingButtonsRow(Flashcard currentCard) {
+  Widget _buildRatingButtonsRow(Flashcard currentCard, AppStrings strings) {
     // Dự báo chu kỳ cho từng mức đánh giá bằng SM2Algorithm
     final againInterval = SM2Algorithm.calculateWithRating(
       currentRepetitions: currentCard.repetitions,
@@ -653,32 +664,32 @@ class _StudyScreenState extends State<StudyScreen> {
     return Row(
       children: [
         _buildRatingButton(
-          label: 'Học lại',
-          intervalText: '$againInterval ngày',
+          label: strings.ratingAgain,
+          intervalText: strings.daysCount(againInterval),
           rating: ReviewRating.again,
           color: AppColors.danger,
           currentCard: currentCard,
         ),
         const SizedBox(width: 8),
         _buildRatingButton(
-          label: 'Khó',
-          intervalText: '$hardInterval ngày',
+          label: strings.ratingHard,
+          intervalText: strings.daysCount(hardInterval),
           rating: ReviewRating.hard,
           color: AppColors.warning,
           currentCard: currentCard,
         ),
         const SizedBox(width: 8),
         _buildRatingButton(
-          label: 'Tốt',
-          intervalText: '$goodInterval ngày',
+          label: strings.ratingGood,
+          intervalText: strings.daysCount(goodInterval),
           rating: ReviewRating.good,
           color: Colors.blueAccent,
           currentCard: currentCard,
         ),
         const SizedBox(width: 8),
         _buildRatingButton(
-          label: 'Dễ',
-          intervalText: '$easyInterval ngày',
+          label: strings.ratingEasy,
+          intervalText: strings.daysCount(easyInterval),
           rating: ReviewRating.easy,
           color: AppColors.secondary,
           currentCard: currentCard,
@@ -761,6 +772,8 @@ class _StudyScreenState extends State<StudyScreen> {
     required String hint,
     required Color backgroundColor,
     required Color borderColor,
+    required AppStrings strings,
+    required bool isEnglish,
   }) {
     return Card(
       margin: EdgeInsets.zero,
@@ -820,7 +833,7 @@ class _StudyScreenState extends State<StudyScreen> {
                                 if (card.topicCode.isNotEmpty &&
                                     card.level.isNotEmpty)
                                   const TextSpan(text: ' • '),
-                                TextSpan(text: card.level),
+                                TextSpan(text: strings.levelLabel(card.level)),
                               ],
                             ),
                             maxLines: 2,
@@ -857,7 +870,7 @@ class _StudyScreenState extends State<StudyScreen> {
                               ),
                               TextSpan(
                                 text:
-                                    ' ${MediaQuery.textScalerOf(context).scale(11) > 16 ? (isBack ? 'ĐÁP ÁN' : 'CÂU HỎI') : tag}',
+                                    ' ${MediaQuery.textScalerOf(context).scale(11) > 16 ? (isBack ? (isEnglish ? 'ANSWER' : 'ĐÁP ÁN') : (isEnglish ? 'QUESTION' : 'CÂU HỎI')) : tag}',
                               ),
                             ],
                           ),
