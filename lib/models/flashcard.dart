@@ -1,5 +1,6 @@
 class Flashcard {
   final String id;
+  final String deckId;
   final String topicCode; // Mã các khối kiến thức Flutter (K01–K20)
   final String level; // Mức độ nhận thức: Nhớ, Hiểu, Vận dụng
   final String front;
@@ -15,6 +16,7 @@ class Flashcard {
 
   Flashcard({
     required this.id,
+    this.deckId = 'flutter-default',
     this.topicCode = '',
     this.level = '',
     required this.front,
@@ -36,6 +38,7 @@ class Flashcard {
 
   Flashcard copyWith({
     String? id,
+    String? deckId,
     String? topicCode,
     String? level,
     String? front,
@@ -49,6 +52,7 @@ class Flashcard {
   }) {
     return Flashcard(
       id: id ?? this.id,
+      deckId: deckId ?? this.deckId,
       topicCode: topicCode ?? this.topicCode,
       level: level ?? this.level,
       front: front ?? this.front,
@@ -66,6 +70,7 @@ class Flashcard {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'deckId': deckId,
       'topicCode': topicCode,
       'level': level,
       'front': front,
@@ -83,6 +88,7 @@ class Flashcard {
   factory Flashcard.fromJson(Map<String, dynamic> json) {
     return Flashcard(
       id: json['id']?.toString() ?? '',
+      deckId: json['deckId'] is String ? json['deckId'] : 'flutter-default',
       topicCode: json['topicCode']?.toString() ?? '',
       level: json['level']?.toString() ?? '',
       front: json['front']?.toString() ?? '',

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+
 import '../core/app_theme.dart';
 import 'home_screen.dart';
-import 'study_screen.dart';
-import 'manage_cards_screen.dart';
+import 'study_decks_screen.dart';
+
+import 'package:provider/provider.dart';
+
+import '../controllers/card_controller.dart';
+import 'manage_decks_screen.dart';
 import 'settings_screen.dart';
 
 class MainNavScreen extends StatefulWidget {
@@ -15,19 +20,40 @@ class MainNavScreen extends StatefulWidget {
 class _MainNavScreenState extends State<MainNavScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    StudyScreen(),
-    ManageCardsScreen(),
-    SettingsScreen(),
-  ];
+  String? _requestedDeckId;
+  int _studyRequest = 0;
+  void _openStudyDeck(String id) {
+    final controller = context.read<CardController>();
+    if (controller.isSaving ||
+        controller.isLoading ||
+        controller.deckById(id) == null) {
+      return;
+    }
+    final tabRoute = ModalRoute.of(context);
+    if (tabRoute != null) {
+      Navigator.of(context).popUntil((route) => route == tabRoute);
+    }
+    setState(() {
+      _requestedDeckId = id;
+      _studyRequest++;
+      _currentIndex = 1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          const HomeScreen(),
+          StudyDecksScreen(
+            requestedDeckId: _requestedDeckId,
+            requestVersion: _studyRequest,
+          ),
+          ManageDecksScreen(onStudyDeck: _openStudyDeck),
+          const SettingsScreen(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
