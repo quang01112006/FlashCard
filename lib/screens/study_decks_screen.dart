@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
+import '../l10n/app_strings.dart';
 import 'study_screen.dart';
 
 /// Mỗi bộ đã mở có một State phiên học riêng trong vòng đời tab.
@@ -67,6 +68,7 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
 
   Widget _buildContent(BuildContext context) {
     final controller = context.watch<CardController>();
+    final strings = AppStrings(controller.isEnglish);
     if (controller.isLoading && controller.decks.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -78,18 +80,18 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
             Text(controller.loadError!),
             TextButton(
               onPressed: () => controller.loadDefaultCards(forceReload: true),
-              child: const Text('Thử lại'),
+              child: Text(strings.retry),
             ),
           ],
         ),
       );
     }
     if (controller.decks.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'Chưa có bộ thẻ để học. Hãy tạo bộ mới ở tab Bộ thẻ.',
+            strings.noDecksToStudy,
             textAlign: TextAlign.center,
           ),
         ),
@@ -105,9 +107,9 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
               initialValue: _selected,
               isExpanded: true,
               itemHeight: null,
-              decoration: const InputDecoration(
-                labelText: 'Bộ đang học',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: strings.currentStudyingDeck,
+                border: const OutlineInputBorder(),
               ),
               items: [
                 for (final deck in controller.decks)
@@ -155,8 +157,8 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
                       padding: const EdgeInsets.all(24),
                       child: Text(
                         _deleted
-                            ? 'Bộ đang học đã bị xóa. Hãy chọn bộ khác.'
-                            : 'Chọn một bộ thẻ để bắt đầu học.',
+                            ? strings.deckDeletedSelectOther
+                            : strings.selectDeckToStudy,
                         textAlign: TextAlign.center,
                       ),
                     ),

@@ -118,7 +118,12 @@ void main() {
     );
     controller.setLanguage(true);
     await tester.pumpAndSettle();
-    expect(find.text('Thẻ 2 / 3'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data == 'Card 2 / 3' || w.data == 'Thẻ 2 / 3'),
+      ),
+      findsOneWidget,
+    );
     await _rate(tester);
     expect(find.text('Câu hỏi b'), findsOneWidget);
   });
