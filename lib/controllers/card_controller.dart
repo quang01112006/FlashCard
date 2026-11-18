@@ -139,8 +139,8 @@ class CardController extends ChangeNotifier {
   /// TODO [Người 2 phụ trách Trang chủ & Lọc thẻ]:
   /// Viết logic lọc danh sách thẻ theo mã khối kiến thức (K01–K20)
   List<Flashcard> getCardsByTopic(String topicCode) {
-    // TODO: Người 2 điền code lọc danh sách thẻ ở đây
-    return [];
+    if (topicCode.isEmpty || topicCode == 'ALL') return _cards;
+    return _cards.where((c) => c.topicCode == topicCode).toList();
   }
 
   /// TODO [Người 4 phụ trách Cài đặt]:
