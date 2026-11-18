@@ -10,6 +10,12 @@ class AppStrings {
   String get save => isEnglish ? 'Save' : 'Lưu';
   String get confirm => isEnglish ? 'Confirm' : 'Xác nhận';
 
+  // Navigation
+  String get navHome => isEnglish ? 'Home' : 'Trang chủ';
+  String get navStudy => isEnglish ? 'Study' : 'Học thẻ';
+  String get navDecks => isEnglish ? 'Decks' : 'Bộ thẻ';
+  String get navSettings => isEnglish ? 'Settings' : 'Cài đặt';
+
   // Language
   String get language => isEnglish ? 'Language' : 'Ngôn ngữ';
   String get languageDescription =>
@@ -33,10 +39,14 @@ class AppStrings {
       : 'Nhận thông báo nhắc bạn ôn tập thẻ mỗi ngày';
   String get reminderTime =>
       isEnglish ? 'Reminder time' : 'Thời gian nhắc nhở';
+  String get reminderTimeDescription =>
+      isEnglish ? 'Tap to choose your reminder time' : 'Chạm để chọn giờ nhắc nhở';
   String get notificationEnabled =>
       isEnglish ? 'Daily reminder enabled' : 'Đã bật nhắc nhở hằng ngày';
   String get notificationDisabled =>
       isEnglish ? 'Daily reminder disabled' : 'Đã tắt nhắc nhở hằng ngày';
+  String reminderSetAt(String time) =>
+      isEnglish ? 'Reminder scheduled for $time' : 'Đã hẹn giờ nhắc nhở vào lúc $time';
 
   // Reset data
   String get resetData =>
@@ -47,10 +57,74 @@ class AppStrings {
   String get resetConfirmationTitle =>
       isEnglish ? 'Reset data?' : 'Khôi phục dữ liệu?';
   String get resetConfirmationMessage => isEnglish
-      ? 'Your flashcards will be restored to the original dataset.'
-      : 'Dữ liệu thẻ sẽ được khôi phục về bộ dữ liệu ban đầu.';
+      ? 'Your flashcards will be restored to the original dataset. Custom cards may be reset.'
+      : 'Dữ liệu thẻ sẽ được khôi phục về bộ dữ liệu ban đầu 300 câu hỏi.';
   String get resetSuccess =>
       isEnglish ? 'Data restored successfully' : 'Khôi phục dữ liệu thành công';
+
+  // Home Screen
+  String get homeTitle => isEnglish ? 'Home' : 'Trang chủ';
+  String get statNew => isEnglish ? 'New' : 'Thẻ mới';
+  String get statReview => isEnglish ? 'Due review' : 'Cần ôn lại';
+  String get statMastered => isEnglish ? 'Mastered' : 'Đã thuộc';
+  String get statTotal => isEnglish ? 'Total' : 'Tổng số';
+  String get knowledgeTopics => isEnglish ? 'Knowledge topics' : 'Khối kiến thức';
+  String topicsCount(int count) => isEnglish ? '$count topics' : '$count chủ đề';
+  String get allTopics => isEnglish ? 'All' : 'Tất cả';
+  String get startReview => isEnglish ? 'Start review' : 'Bắt đầu ôn tập';
+  String studyNewToday(int n) =>
+      isEnglish ? 'Study $n new cards today' : 'Học $n thẻ mới hôm nay';
+  String studyDueAndNew(int due, int n) =>
+      isEnglish ? 'Review ($due due + $n new)' : 'Bắt đầu ôn tập ($due ôn lại + $n mới)';
+  String get allDoneToday =>
+      isEnglish ? 'All done for today! Custom study' : 'Đã hoàn thành hôm nay! Ôn tập tự do';
+  String get allDoneMessage =>
+      isEnglish ? 'You have completed today\'s study goal' : 'Bạn đã hoàn thành mục tiêu học tập hôm nay';
+  String get customStudyHint =>
+      isEnglish ? 'Tap "Custom study" above to practice more' : 'Nhấn nút "Ôn tập tự do" phía trên để ôn luyện thêm';
+  String noCardsInTopic(String topic) =>
+      isEnglish ? 'No cards in $topic' : 'Không có thẻ nào trong khối $topic';
+  String get chooseOtherTopic =>
+      isEnglish ? 'Please choose another topic or import cards' : 'Hãy chọn khối khác hoặc nhập thêm thẻ mới';
+  String topicCardsCount(String topic, int count) =>
+      isEnglish ? 'Topic $topic ($count cards)' : 'Khối $topic ($count thẻ)';
+  String todayGoalTitle(int due, int n) =>
+      isEnglish ? 'Today\'s goal ($due review + $n new)' : 'Mục tiêu hôm nay ($due ôn lại + $n mới)';
+  String todayNewTitle(int n) =>
+      isEnglish ? 'Today\'s new cards ($n cards)' : 'Thẻ mới hôm nay ($n thẻ)';
+  String get studyThisTopic => isEnglish ? 'Study this' : 'Học khối này';
+  String get seeMore => isEnglish ? 'See more' : 'Xem thêm';
+  String get collapse => isEnglish ? 'Collapse' : 'Thu gọn';
+  String get questionLabel => isEnglish ? 'QUESTION' : 'CÂU HỎI';
+  String get answerLabel => isEnglish ? 'ANSWER' : 'ĐÁP ÁN';
+  String studyTopicAction(String topic) =>
+      isEnglish ? 'Study topic $topic' : 'Ôn tập khối $topic';
+  String get notStudied => isEnglish ? 'Not studied' : 'Chưa học';
+  String repIntervalInfo(int reps, int days) =>
+      isEnglish ? 'Rep: $reps • ${days}d' : 'Lặp: $reps • ${days}d';
+  String get dueTodayBadge => isEnglish ? 'Due today' : 'Cần ôn hôm nay';
+  String get newCardBadge => isEnglish ? 'New' : 'Thẻ mới';
+  String reviewedBadge(int days) =>
+      isEnglish ? 'Reviewed (${days}d)' : 'Đã ôn (${days}d)';
+
+  // Study Screen
+  String get showAnswer => isEnglish ? 'Show Answer' : 'Hiện đáp án';
+  String get ratingAgain => isEnglish ? 'Again' : 'Lại';
+  String get ratingHard => isEnglish ? 'Hard' : 'Khó';
+  String get ratingGood => isEnglish ? 'Good' : 'Tốt';
+  String get ratingEasy => isEnglish ? 'Easy' : 'Dễ';
+  String get restartStudy => isEnglish ? 'Restart from beginning' : 'Ôn tập lại từ đầu';
+  String get sessionCompleted => isEnglish ? 'Session completed' : 'Hoàn thành phiên học';
+  String get greatJob => isEnglish ? 'Great job!' : 'Tuyệt vời!';
+  String completedMessage(int count) => isEnglish
+      ? 'You completed the review session with $count cards.'
+      : 'Bạn đã hoàn thành phiên ôn tập với $count thẻ.';
+  String get noCardsInSession => isEnglish
+      ? 'No cards in this study session!'
+      : 'Chưa có thẻ nào trong phiên học!';
+  String get undoSuccess => isEnglish
+      ? 'Undone last rated card'
+      : 'Đã hoàn tác câu vừa đánh giá';
 
   // Common states
   String get comingSoon => isEnglish ? 'Coming soon' : 'Sẽ được cập nhật';

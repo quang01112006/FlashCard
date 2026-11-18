@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
 import '../core/app_theme.dart';
+import '../l10n/app_strings.dart';
 import '../models/flashcard.dart';
 import '../widgets/code_text_view.dart';
 import 'study_screen.dart';
@@ -33,7 +34,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showCardPreview(BuildContext context, Flashcard card, bool isDark) {
+  void _showCardPreview(BuildContext context, Flashcard card, bool isDark, AppStrings strings, bool isEnglish) {
+    final questionText =
+        isEnglish && card.frontEn != null && card.frontEn!.trim().isNotEmpty
+            ? card.frontEn!
+            : card.front;
+    final answerText =
+        isEnglish && card.backEn != null && card.backEn!.trim().isNotEmpty
+            ? card.backEn!
+            : card.back;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -104,13 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const Spacer(),
-                      _buildCardStatusBadge(card, isDark),
+                      _buildCardStatusBadge(card, strings),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'CÂU HỎI',
-                    style: TextStyle(
+                  Text(
+                    strings.questionLabel,
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
@@ -119,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 8),
                   CodeTextView(
-                    text: card.front,
+                    text: questionText,
                     baseStyle: AppTextStyles.body.copyWith(
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
@@ -128,9 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     textAlign: TextAlign.left,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'ĐÁP ÁN',
-                    style: TextStyle(
+                  Text(
+                    strings.answerLabel,
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
@@ -148,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     child: CodeTextView(
-                      text: card.back,
+                      text: answerText,
                       baseStyle: AppTextStyles.body.copyWith(
                         color: isDark ? Colors.grey.shade200 : AppColors.textPrimary,
                       ),
@@ -166,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     icon: const Icon(Icons.school, size: 18),
-                    label: Text('Ôn tập khối ${card.topicCode}'),
+                    label: Text(strings.studyTopicAction(card.topicCode)),
                     onPressed: () {
                       Navigator.of(ctx).pop();
                       _startStudy(topicCode: card.topicCode);
@@ -181,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCardStatusBadge(Flashcard card, bool isDark) {
+  Widget _buildCardStatusBadge(Flashcard card, AppStrings strings) {
     if (card.repetitions == 0) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -189,14 +199,14 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.blue.withOpacity(0.15),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.fiber_new_rounded, size: 15, color: Colors.blue),
-            SizedBox(width: 4),
+            const Icon(Icons.fiber_new_rounded, size: 15, color: Colors.blue),
+            const SizedBox(width: 4),
             Text(
-              'Thẻ mới',
-              style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.w600),
+              strings.newCardBadge,
+              style: const TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -208,14 +218,14 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.amber.withOpacity(0.15),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.schedule, size: 14, color: Colors.amber),
-            SizedBox(width: 4),
+            const Icon(Icons.schedule, size: 14, color: Colors.amber),
+            const SizedBox(width: 4),
             Text(
-              'Cần ôn hôm nay',
-              style: TextStyle(fontSize: 11, color: Colors.amber, fontWeight: FontWeight.w600),
+              strings.dueTodayBadge,
+              style: const TextStyle(fontSize: 11, color: Colors.amber, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -233,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
             const SizedBox(width: 4),
             Text(
-              'Đã ôn (${card.interval}d)',
+              strings.reviewedBadge(card.interval),
               style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w600),
             ),
           ],
@@ -247,6 +257,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<CardController>();
+    final strings = AppStrings(controller.isEnglish);
+    final isEnglish = controller.isEnglish;
 
     final Set<String> existingTopicCodes = {};
     for (final card in controller.cards) {
@@ -273,33 +285,33 @@ class _HomeScreenState extends State<HomeScreen> {
     if (currentSelectedTopic == 'ALL') {
       if (reviewCards.isNotEmpty) {
         allDisplayCards = [...reviewCards, ...todayNewCards];
-        listSectionTitle = 'Mục tiêu hôm nay (${reviewCards.length} ôn lại + ${todayNewCards.length} mới)';
+        listSectionTitle = strings.todayGoalTitle(reviewCards.length, todayNewCards.length);
       } else if (todayNewCards.isNotEmpty) {
         allDisplayCards = todayNewCards;
-        listSectionTitle = 'Thẻ mới hôm nay (${todayNewCards.length} thẻ)';
+        listSectionTitle = strings.todayNewTitle(todayNewCards.length);
       } else {
         allDisplayCards = [];
-        listSectionTitle = 'Hôm nay';
+        listSectionTitle = strings.homeTitle;
       }
     } else {
       allDisplayCards = controller.getCardsByTopic(currentSelectedTopic);
-      listSectionTitle = 'Khối $currentSelectedTopic (${allDisplayCards.length} thẻ)';
+      listSectionTitle = strings.topicCardsCount(currentSelectedTopic, allDisplayCards.length);
     }
 
     final visibleCards = allDisplayCards.take(_previewLimit).toList();
 
     final String studyButtonLabel;
     if (reviewCards.isNotEmpty) {
-      studyButtonLabel = 'Bắt đầu ôn tập (${reviewCards.length} ôn lại + ${todayNewCards.length} mới)';
+      studyButtonLabel = strings.studyDueAndNew(reviewCards.length, todayNewCards.length);
     } else if (todayNewCards.isNotEmpty) {
-      studyButtonLabel = 'Học ${todayNewCards.length} thẻ mới hôm nay';
+      studyButtonLabel = strings.studyNewToday(todayNewCards.length);
     } else {
-      studyButtonLabel = 'Đã hoàn thành hôm nay! Ôn tập tự do';
+      studyButtonLabel = strings.allDoneToday;
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trang chủ'),
+        title: Text(strings.homeTitle),
         centerTitle: false,
       ),
       body: controller.isLoading
@@ -325,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Expanded(
                               child: _statItem(
-                                label: 'Thẻ mới',
+                                label: strings.statNew,
                                 value: '${newCards.length}',
                                 color: const Color(0xFF2563EB),
                                 icon: Icons.fiber_new_rounded,
@@ -334,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(width: 1, height: 44, color: theme.dividerColor),
                             Expanded(
                               child: _statItem(
-                                label: 'Cần ôn lại',
+                                label: strings.statReview,
                                 value: '${reviewCards.length}',
                                 color: reviewCards.isNotEmpty ? AppColors.warning : AppColors.secondary,
                                 icon: Icons.schedule_rounded,
@@ -343,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(width: 1, height: 44, color: theme.dividerColor),
                             Expanded(
                               child: _statItem(
-                                label: 'Đã thuộc',
+                                label: strings.statMastered,
                                 value: '${masteredCards.length}',
                                 color: AppColors.secondary,
                                 icon: Icons.verified_outlined,
@@ -394,15 +406,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Khối kiến thức',
+                            strings.knowledgeTopics,
                             style: AppTextStyles.subHeading,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Text(
-                          '${sortedTopics.length} chủ đề',
+                          strings.topicsCount(sortedTopics.length),
                           style: AppTextStyles.caption.copyWith(color: theme.hintColor),
                         ),
                       ],
@@ -425,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.only(right: 8),
                             child: ChoiceChip(
                               label: Text(
-                                topic == 'ALL' ? 'Tất cả ($count)' : '$topic ($count)',
+                                topic == 'ALL' ? '${strings.allTopics} ($count)' : '$topic ($count)',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isSelected
@@ -471,9 +483,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             ),
                             icon: const Icon(Icons.school_outlined, size: 16),
-                            label: const Text(
-                              'Học khối này',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                            label: Text(
+                              strings.studyThisTopic,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                             onPressed: () => _startStudy(topicCode: currentSelectedTopic),
                           ),
@@ -506,8 +518,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 10),
                             Text(
                               currentSelectedTopic == 'ALL'
-                                  ? 'Bạn đã hoàn thành mục tiêu học tập hôm nay'
-                                  : 'Không có thẻ nào trong khối $currentSelectedTopic',
+                                  ? strings.allDoneMessage
+                                  : strings.noCardsInTopic(currentSelectedTopic),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 13,
@@ -518,8 +530,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 4),
                             Text(
                               currentSelectedTopic == 'ALL'
-                                  ? 'Nhấn nút "Ôn tập tự do" phía trên để ôn luyện thêm'
-                                  : 'Hãy chọn khối khác hoặc nhập thêm thẻ mới',
+                                  ? strings.customStudyHint
+                                  : strings.chooseOtherTopic,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 12,
@@ -536,6 +548,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: visibleCards.length,
                         itemBuilder: (context, index) {
                           final card = visibleCards[index];
+                          final question =
+                              isEnglish && card.frontEn != null && card.frontEn!.trim().isNotEmpty
+                                  ? card.frontEn!
+                                  : card.front;
 
                           return Card(
                             margin: const EdgeInsets.only(bottom: 10),
@@ -549,7 +565,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
-                              onTap: () => _showCardPreview(context, card, isDark),
+                              onTap: () => _showCardPreview(context, card, isDark, strings, isEnglish),
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Row(
@@ -581,7 +597,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            card.front,
+                                            question,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTextStyles.body.copyWith(
@@ -612,8 +628,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               Text(
                                                 card.repetitions == 0
-                                                    ? 'Chưa học'
-                                                    : 'Lặp: ${card.repetitions} • ${card.interval}d',
+                                                    ? strings.notStudied
+                                                    : strings.repIntervalInfo(card.repetitions, card.interval),
                                                 style: TextStyle(
                                                   fontSize: 11,
                                                   color: theme.hintColor,
@@ -625,7 +641,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    _buildCardTrailingIcon(card),
+                                    _buildCardTrailingIcon(card, strings),
                                   ],
                                 ),
                               ),
@@ -652,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     icon: const Icon(Icons.expand_more, size: 18),
                                     label: Text(
-                                      'Xem thêm (${visibleCards.length} / ${allDisplayCards.length})',
+                                      '${strings.seeMore} (${visibleCards.length} / ${allDisplayCards.length})',
                                       style: const TextStyle(fontSize: 13),
                                     ),
                                     onPressed: () {
@@ -665,7 +681,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               if (_previewLimit > 5) ...[
                                 const SizedBox(width: 8),
                                 IconButton.outlined(
-                                  tooltip: 'Thu gọn danh sách',
+                                  tooltip: strings.collapse,
                                   style: IconButton.styleFrom(
                                     side: BorderSide(
                                       color: isDark ? const Color(0xFF334155) : AppColors.border,
@@ -690,21 +706,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCardTrailingIcon(Flashcard card) {
+  Widget _buildCardTrailingIcon(Flashcard card, AppStrings strings) {
     if (card.repetitions == 0) {
-      return const Tooltip(
-        message: 'Thẻ mới chưa học',
-        child: Icon(Icons.fiber_new_rounded, size: 20, color: Color(0xFF2563EB)),
+      return Tooltip(
+        message: strings.newCardBadge,
+        child: const Icon(Icons.fiber_new_rounded, size: 20, color: Color(0xFF2563EB)),
       );
     } else if (card.isDueToday) {
-      return const Tooltip(
-        message: 'Đến hạn ôn tập hôm nay',
-        child: Icon(Icons.schedule_rounded, size: 20, color: AppColors.warning),
+      return Tooltip(
+        message: strings.dueTodayBadge,
+        child: const Icon(Icons.schedule_rounded, size: 20, color: AppColors.warning),
       );
     } else {
-      return const Tooltip(
-        message: 'Đã ôn tập',
-        child: Icon(Icons.check_circle_outline_rounded, size: 20, color: AppColors.secondary),
+      return Tooltip(
+        message: strings.reviewedBadge(card.interval),
+        child: const Icon(Icons.check_circle_outline_rounded, size: 20, color: AppColors.secondary),
       );
     }
   }

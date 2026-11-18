@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../core/app_theme.dart';
-import 'home_screen.dart';
-import 'study_decks_screen.dart';
-
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
+import '../core/app_theme.dart';
+import '../l10n/app_strings.dart';
+import 'home_screen.dart';
+import 'study_decks_screen.dart';
 import 'manage_decks_screen.dart';
 import 'settings_screen.dart';
 
@@ -42,6 +41,9 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<CardController>();
+    final strings = AppStrings(controller.isEnglish);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -65,26 +67,26 @@ class _MainNavScreenState extends State<MainNavScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Trang chủ',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: strings.navHome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school_outlined),
-            activeIcon: Icon(Icons.school),
-            label: 'Học thẻ',
+            icon: const Icon(Icons.school_outlined),
+            activeIcon: const Icon(Icons.school),
+            label: strings.navStudy,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.style_outlined),
-            activeIcon: Icon(Icons.style),
-            label: 'Bộ thẻ',
+            icon: const Icon(Icons.style_outlined),
+            activeIcon: const Icon(Icons.style),
+            label: strings.navDecks,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Cài đặt',
+            icon: const Icon(Icons.settings_outlined),
+            activeIcon: const Icon(Icons.settings),
+            label: strings.navSettings,
           ),
         ],
       ),
