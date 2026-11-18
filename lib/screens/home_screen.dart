@@ -25,10 +25,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const int _dailyNewCardsLimit = 20;
 
-  void _startStudy({String? topicCode}) {
+  void _startStudy({String? topicCode, int? limit}) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => StudyScreen(topicCode: topicCode),
+        builder: (_) => StudyScreen(topicCode: topicCode, cardLimit: limit),
       ),
     );
   }
@@ -378,16 +378,28 @@ class _HomeScreenState extends State<HomeScreen> {
                           studyButtonLabel,
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                         ),
-                        onPressed: totalCards.isEmpty ? null : () => _startStudy(),
+                        onPressed: totalCards.isEmpty
+                            ? null
+                            : () {
+                                if (currentSelectedTopic != 'ALL') {
+                                  _startStudy(topicCode: currentSelectedTopic);
+                                } else {
+                                  final targetCount = reviewCards.length + todayNewCards.length;
+                                  _startStudy(limit: targetCount > 0 ? targetCount : null);
+                                }
+                              },
                       ),
                     ),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Khối kiến thức',
-                          style: AppTextStyles.subHeading,
+                        const Expanded(
+                          child: Text(
+                            'Khối kiến thức',
+                            style: AppTextStyles.subHeading,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         Text(
                           '${sortedTopics.length} chủ đề',
@@ -445,9 +457,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          listSectionTitle,
-                          style: AppTextStyles.subHeading.copyWith(fontSize: 15),
+                        Expanded(
+                          child: Text(
+                            listSectionTitle,
+                            style: AppTextStyles.subHeading.copyWith(fontSize: 15),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         if (currentSelectedTopic != 'ALL' && allDisplayCards.isNotEmpty)
                           TextButton.icon(
@@ -576,7 +591,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           ),
                                           const SizedBox(height: 6),
-                                          Row(
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 4,
+                                            crossAxisAlignment: WrapCrossAlignment.center,
                                             children: [
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -592,7 +610,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
                                               Text(
                                                 card.repetitions == 0
                                                     ? 'Chưa học'
@@ -703,19 +720,25 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Icon(icon, size: 20, color: color),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppTextStyles.heading.copyWith(
-            color: color,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: AppTextStyles.heading.copyWith(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.caption.copyWith(fontSize: 11),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(fontSize: 11),
+          ),
         ),
       ],
     );

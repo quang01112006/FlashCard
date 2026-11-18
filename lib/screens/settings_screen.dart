@@ -53,24 +53,29 @@ class SettingsScreen extends StatelessWidget {
                 strings.languageDescription,
                 style: AppTextStyles.caption,
               ),
-              trailing: DropdownButton<bool>(
-                value: controller.isEnglish,
-                underline: const SizedBox(),
-                items: [
-                  DropdownMenuItem(
-                    value: false,
-                    child: Text(strings.vietnamese),
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 130),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<bool>(
+                    isDense: true,
+                    value: controller.isEnglish,
+                    items: [
+                      DropdownMenuItem(
+                        value: false,
+                        child: Text(strings.vietnamese, overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: true,
+                        child: Text(strings.english, overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        context.read<CardController>().setLanguage(value);
+                      }
+                    },
                   ),
-                  DropdownMenuItem(
-                    value: true,
-                    child: Text(strings.english),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    context.read<CardController>().setLanguage(value);
-                  }
-                },
+                ),
               ),
             ),
           ),

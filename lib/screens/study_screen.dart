@@ -11,11 +11,13 @@ import '../services/manage_card_store.dart';
 
 class StudyScreen extends StatefulWidget {
   final String? topicCode; // Tuỳ chọn: truyền mã chủ đề (ví dụ 'K01') để chỉ học riêng chủ đề đó
+  final int? cardLimit;
 
   const StudyScreen({
     super.key,
     this.topicCode,
     this.deckId = 'flutter-default',
+    this.cardLimit,
   });
   final String deckId;
 
@@ -81,7 +83,10 @@ class _StudyScreenState extends State<StudyScreen> {
 
     if (availableCards.isNotEmpty) {
       if (!_isSessionInitialized || _sessionCards.isEmpty) {
-        _sessionCards = List.from(availableCards);
+        final cardsToTake = widget.cardLimit != null && widget.cardLimit! > 0
+            ? availableCards.take(widget.cardLimit!).toList()
+            : List<Flashcard>.from(availableCards);
+        _sessionCards = cardsToTake;
         _currentIndex = 0;
         _isSessionInitialized = true;
       } else {
