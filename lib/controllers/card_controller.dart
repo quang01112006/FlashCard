@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:collection';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/flashcard.dart';
@@ -9,6 +9,7 @@ import '../models/card_deck.dart';
 import '../services/manage_deck_store.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_store.dart';
+import '../services/notification_service.dart';
 
 class CardController extends ChangeNotifier {
   CardController({AssetBundle? assetBundle, ManageCardStore? store})
@@ -143,10 +144,55 @@ class CardController extends ChangeNotifier {
     return _cards.where((c) => c.topicCode == topicCode).toList();
   }
 
-  /// TODO [Người 4 phụ trách Cài đặt]:
-  /// Viết logic khôi phục toàn bộ dữ liệu thẻ về trạng thái 300 câu hỏi gốc ban đầu
+  bool _isReminderEnabled = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
+
+  bool get isReminderEnabled => _isReminderEnabled;
+  TimeOfDay get reminderTime => _reminderTime;
+
+  Future<void> setReminder({required bool enabled, TimeOfDay? time}) async {
+    _isReminderEnabled = enabled;
+    if (time != null) {
+      _reminderTime = time;
+    }
+    if (enabled) {
+      await NotificationService.scheduleDailyReminder(selectedTime: _reminderTime);
+    } else {
+      await NotificationService.cancelReminder();
+    }
+    _notify();
+  }
+
+  /// Khôi phục toàn bộ dữ liệu thẻ về trạng thái 300 câu hỏi gốc ban đầu
   Future<void> resetAllCards() async {
-    // TODO: Người 4 điền code reset ở đây
+    if (_disposed || _isLoading || _isSaving) return;
+    _isLoading = true;
+    _loadError = null;
+    _notify();
+
+    try {
+      final jsonString = await _assetBundle.loadString('assets/default_cards.json');
+      final defaultCards = decodeManageCards(jsonDecode(jsonString));
+
+      final deckStore = _store is ManageDeckStore ? _store as ManageDeckStore : null;
+      if (deckStore != null) {
+        await deckStore.writeCollection(DeckCollection(
+          decks: [const CardDeck(id: CardDeck.flutterId, name: 'Học Flutter')],
+          cards: defaultCards,
+        ));
+      } else {
+        await _store.write(defaultCards);
+      }
+      _cards.clear();
+      _cards.addAll(defaultCards);
+      _decks = [const CardDeck(id: CardDeck.flutterId, name: 'Học Flutter')];
+      _hasLoaded = true;
+    } catch (e) {
+      _loadError = 'Không thể khôi phục dữ liệu gốc: $e';
+    } finally {
+      _isLoading = false;
+      _notify();
+    }
   }
 
   /// Cập nhật ngôn ngữ (Người 4 gọi ở Tab Cài đặt)
