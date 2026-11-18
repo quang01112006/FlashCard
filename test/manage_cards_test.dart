@@ -957,7 +957,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(
       find.byWidgetPredicate(
-        (w) => w is Text && (w.data == 'Hiện đáp án' || w.data == 'Show answer'),
+        (w) => w is Text && (w.data == 'Hiện đáp án' || w.data == 'Show Answer' || w.data == 'Show answer'),
       ),
     );
     await tester.pumpAndSettle();
