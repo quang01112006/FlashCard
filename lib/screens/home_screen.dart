@@ -359,9 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 48,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: reviewCards.isNotEmpty
+                          backgroundColor: reviewCards.isNotEmpty || todayNewCards.isNotEmpty
                               ? AppColors.primary
-                              : (todayNewCards.isNotEmpty ? const Color(0xFF2563EB) : AppColors.secondary),
+                              : AppColors.secondary,
                           foregroundColor: Colors.white,
                           elevation: 1,
                           shape: RoundedRectangleBorder(
