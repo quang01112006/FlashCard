@@ -595,7 +595,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(width: 8),
                                 IconButton.outlined(
                                   tooltip: 'Thu gọn danh sách',
-                                  style: IconButton.outlinedButtonTheme.style,
+                                  style: IconButton.styleFrom(
+                                    side: BorderSide(
+                                      color: isDark ? const Color(0xFF334155) : AppColors.border,
+                                    ),
+                                  ),
                                   icon: const Icon(Icons.expand_less, size: 18),
                                   onPressed: () {
                                     setState(() {
