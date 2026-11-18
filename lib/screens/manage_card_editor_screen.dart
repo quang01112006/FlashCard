@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/manage_select_field.dart';
+import '../widgets/manage_motion.dart';
 
 import 'package:provider/provider.dart';
 
@@ -269,8 +270,9 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _saving ? null : _save,
-                    child: Text(
-                      _saving
+                    child: ManageActionLabel(
+                      busy: _saving,
+                      label: _saving
                           ? _strings.text('Đang lưu...')
                           : _strings.text('Lưu thẻ'),
                     ),

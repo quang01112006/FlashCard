@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/manage_select_field.dart';
+import '../widgets/manage_motion.dart';
 
 import 'package:provider/provider.dart';
 
@@ -240,8 +241,9 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                         onPressed: busy || _selected.isEmpty || deck == null
                             ? null
                             : _save,
-                        child: Text(
-                          _saving
+                        child: ManageActionLabel(
+                          busy: _saving,
+                          label: _saving
                               ? _strings.text('Đang lưu...')
                               : _strings.save(_selected.length),
                         ),
@@ -346,8 +348,9 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                         null
                 ? null
                 : _generate,
-            child: Text(
-              _generating
+            child: ManageActionLabel(
+              busy: _generating,
+              label: _generating
                   ? _strings.text('Đang tạo...')
                   : _strings.text('Tạo bản nháp'),
             ),
@@ -398,6 +401,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           return Card(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: ExpansionTile(
+              expansionAnimationStyle: ManageMotion.style(context),
               key: PageStorageKey('manage_ai_draft_$index'),
               leading: Checkbox(
                 key: ValueKey('manage_ai_select_$index'),

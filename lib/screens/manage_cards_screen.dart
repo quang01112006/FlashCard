@@ -12,6 +12,8 @@ import '../services/manage_csv_files.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
 import '../widgets/code_text_view.dart';
+import '../widgets/manage_motion.dart';
+import '../widgets/manage_card_actions.dart';
 import '../widgets/manage_card_filters_sheet.dart';
 import '../widgets/manage_delete_card_dialog.dart';
 import 'manage_card_editor_screen.dart';
@@ -96,6 +98,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      sheetAnimationStyle: ManageMotion.style(context),
       builder: (_) => ManageCardFiltersSheet(
         initialFilter: _filter,
         topics: widget.deckId == null
@@ -169,6 +172,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     final controller = context.read<CardController>();
     if (_csvBusy || controller.isSaving) return;
     if (action == _CsvAction.demoAi) {
+      FocusScope.of(context).unfocus();
       final deckId = widget.deckId;
       if (deckId == null || controller.deckById(deckId) == null) return;
       final count = await Navigator.push<int>(
@@ -520,6 +524,8 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                     card: results[index],
                     isEnglish: controller.isEnglish,
                     highlighted: results[index].id == _recentCardId,
+                    showMove:
+                        widget.deckId != null && controller.decks.length > 1,
                     onEdit: controller.isSaving || _csvBusy
                         ? null
                         : () => _openEditor(results[index]),
@@ -549,6 +555,7 @@ class _ManageCardItem extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.highlighted = false,
+    this.showMove = false,
     this.onMove,
   });
 
@@ -557,6 +564,7 @@ class _ManageCardItem extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final bool highlighted;
+  final bool showMove;
   final VoidCallback? onMove;
 
   String _textForLanguage(String vietnamese, String? english) {
@@ -576,6 +584,7 @@ class _ManageCardItem extends StatelessWidget {
           : null,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
+        expansionAnimationStyle: ManageMotion.style(context),
         key: PageStorageKey('manage_card_${card.id}'),
         tilePadding: const EdgeInsets.all(16),
         expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
@@ -587,7 +596,7 @@ class _ManageCardItem extends StatelessWidget {
             'manage_front_${card.id}_${isEnglish ? 'en' : 'vi'}',
           ),
           text: _textForLanguage(card.front, card.frontEn),
-          baseStyle: AppTextStyles.body,
+          baseStyle: Theme.of(context).textTheme.bodyLarge,
           textAlign: TextAlign.left,
         ),
         subtitle: Padding(
@@ -597,12 +606,15 @@ class _ManageCardItem extends StatelessWidget {
               card.topicCode,
               card.level,
             ].where((value) => value.isNotEmpty).join(' • '),
-            style: AppTextStyles.caption,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
         children: [
-          const Divider(color: AppColors.border),
-          const Text('Đáp án & giải thích', style: AppTextStyles.subHeading),
+          Divider(color: Theme.of(context).colorScheme.outlineVariant),
+          Text(
+            'Đáp án & giải thích',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           SelectionArea(
             child: CodeTextView(
@@ -610,39 +622,15 @@ class _ManageCardItem extends StatelessWidget {
                 'manage_answer_${card.id}_${isEnglish ? 'en' : 'vi'}',
               ),
               text: _textForLanguage(card.back, card.backEn),
-              baseStyle: AppTextStyles.body,
+              baseStyle: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.left,
             ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            alignment: WrapAlignment.end,
-            children: [
-              if (onMove != null)
-                TextButton.icon(
-                  onPressed: onMove,
-                  icon: const Icon(Icons.drive_file_move_outline),
-                  label: const Text('Chuyển bộ'),
-                ),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(48, 48),
-                ),
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text('Sửa thẻ'),
-              ),
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.danger,
-                  minimumSize: const Size(48, 48),
-                ),
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Xóa thẻ'),
-              ),
-            ],
+          ManageCardActions(
+            showMove: showMove,
+            onEdit: onEdit,
+            onMove: onMove,
+            onDelete: onDelete,
           ),
         ],
       ),
@@ -677,7 +665,7 @@ class _ManageCardsMessage extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               title,
-              style: AppTextStyles.subHeading,
+              style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),

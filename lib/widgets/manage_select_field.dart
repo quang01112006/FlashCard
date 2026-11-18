@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 
+import 'manage_motion.dart';
+
 /// Ô chọn thống nhất cho quản lý thẻ và chọn bộ học.
 class ManageSelectField<T> extends StatelessWidget {
   const ManageSelectField({
@@ -110,6 +112,7 @@ class ManageSelectField<T> extends StatelessWidget {
               maxHeight: MediaQuery.sizeOf(context).height * .7,
             ),
             modalBottomSheetProps: ModalBottomSheetProps(
+              sheetAnimationStyle: ManageMotion.style(context),
               backgroundColor: colors.surface,
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -155,6 +158,7 @@ class ManageSelectField<T> extends StatelessWidget {
               maxHeight: math.min(320, MediaQuery.sizeOf(context).height * .45),
             ),
             menuProps: MenuProps(
+              popUpAnimationStyle: ManageMotion.style(context),
               align: MenuAlign.bottomStart,
               margin: const EdgeInsets.only(top: 6),
               shape: shape,

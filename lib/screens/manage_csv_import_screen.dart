@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/manage_select_field.dart';
+import '../widgets/manage_motion.dart';
 
 import 'package:provider/provider.dart';
 
@@ -259,6 +260,7 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                     return Card(
                       margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                       child: ExpansionTile(
+                        expansionAnimationStyle: ManageMotion.style(context),
                         key: PageStorageKey('manage_csv_preview_$index'),
                         title: Text(
                           card.front
@@ -348,8 +350,9 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                   child: ElevatedButton(
                     key: const ValueKey('manage_csv_confirm_import'),
                     onPressed: busy || result.cards.isEmpty ? null : _import,
-                    child: Text(
-                      _saving
+                    child: ManageActionLabel(
+                      busy: _saving,
+                      label: _saving
                           ? 'Đang nhập...'
                           : 'Nhập ${result.cards.length} thẻ hợp lệ',
                     ),
