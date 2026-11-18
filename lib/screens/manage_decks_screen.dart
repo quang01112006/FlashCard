@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
+import '../l10n/app_strings.dart';
 import '../models/card_deck.dart';
 import '../services/manage_card_store.dart';
 import '../widgets/manage_deck_action_dialog.dart';
@@ -25,12 +26,13 @@ class ManageDecksScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<CardController>();
+    final strings = AppStrings(controller.isEnglish);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Các bộ thẻ'),
+        title: Text(strings.decksTitle),
         actions: [
           IconButton(
-            tooltip: 'Tạo bộ thẻ',
+            tooltip: strings.createDeck,
             key: const ValueKey('manage_create_deck'),
             onPressed:
                 controller.isLoading ||
@@ -58,13 +60,13 @@ class ManageDecksScreen extends StatelessWidget {
                   TextButton(
                     onPressed: () =>
                         controller.loadDefaultCards(forceReload: true),
-                    child: const Text('Thử lại'),
+                    child: Text(strings.retry),
                   ),
                 ],
               ),
             )
           : controller.decks.isEmpty
-          ? const Center(child: Text('Chưa có bộ thẻ. Nhấn + để tạo bộ mới.'))
+          ? Center(child: Text(strings.noDecksYet))
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: controller.decks.length,
@@ -81,10 +83,10 @@ class ManageDecksScreen extends StatelessWidget {
                         ),
                         title: Text(deck.name),
                         subtitle: Text(
-                          '${controller.cardsInDeck(deck.id).length} câu hỏi${deck.description.isEmpty ? '' : '\n${deck.description}'}',
+                          '${strings.cardsCount(controller.cardsInDeck(deck.id).length)}${deck.description.isEmpty ? '' : '\n${deck.description}'}',
                         ),
                         trailing: PopupMenuButton<String>(
-                          tooltip: 'Quản lý bộ thẻ',
+                          tooltip: strings.manageDeck,
                           enabled:
                               !controller.isSaving && !controller.isLoading,
                           onSelected: (action) async {
@@ -105,14 +107,14 @@ class ManageDecksScreen extends StatelessWidget {
                               );
                             }
                           },
-                          itemBuilder: (_) => const [
+                          itemBuilder: (_) => [
                             PopupMenuItem(
                               value: 'rename',
-                              child: Text('Đổi tên / mô tả'),
+                              child: Text(strings.renameDeck),
                             ),
                             PopupMenuItem(
                               value: 'delete',
-                              child: Text('Xóa bộ thẻ'),
+                              child: Text(strings.deleteDeck),
                             ),
                           ],
                         ),
@@ -134,7 +136,7 @@ class ManageDecksScreen extends StatelessWidget {
                               ? null
                               : () => _study(context, deck.id),
                           icon: const Icon(Icons.school_outlined),
-                          label: const Text('Học bộ này'),
+                          label: Text(strings.studyThisDeck),
                         ),
                       ),
                     ],
@@ -207,72 +209,80 @@ class _ManageCreateDeckScreenState extends State<ManageCreateDeckScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !_saving,
-    child: Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.initialDeck == null ? 'Tạo bộ thẻ' : 'Đổi tên bộ thẻ',
+  Widget build(BuildContext context) {
+    final controller = context.watch<CardController>();
+    final isEnglish = controller.isEnglish;
+    return PopScope(
+      canPop: !_saving,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.initialDeck == null
+                ? (isEnglish ? 'Create deck' : 'Đổi tên bộ thẻ')
+                : (isEnglish ? 'Rename deck' : 'Đổi tên bộ thẻ'),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              TextFormField(
-                key: const ValueKey('manage_deck_name'),
-                controller: _name,
-                enabled: !_saving,
-                decoration: const InputDecoration(
-                  labelText: 'Tên bộ thẻ',
-                  hintText: 'Ví dụ: Nấu ăn, Khoa học, Tiếng Anh',
-                  border: OutlineInputBorder(),
+        body: SafeArea(
+          child: Form(
+            key: _form,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                TextFormField(
+                  key: const ValueKey('manage_deck_name'),
+                  controller: _name,
+                  enabled: !_saving,
+                  decoration: InputDecoration(
+                    labelText: isEnglish ? 'Deck name' : 'Tên bộ thẻ',
+                    hintText: isEnglish
+                        ? 'e.g. Cooking, Science, English'
+                        : 'Ví dụ: Nấu ăn, Khoa học, Tiếng Anh',
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? (isEnglish ? 'Please enter deck name.' : 'Vui lòng nhập tên bộ thẻ.')
+                      : null,
                 ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Vui lòng nhập tên bộ thẻ.'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                key: const ValueKey('manage_deck_description'),
-                controller: _description,
-                enabled: !_saving,
-                minLines: 3,
-                maxLines: null,
-                decoration: const InputDecoration(
-                  labelText: 'Mô tả (tùy chọn)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  key: const ValueKey('manage_deck_description'),
+                  controller: _description,
+                  enabled: !_saving,
+                  minLines: 3,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    labelText: isEnglish ? 'Description (optional)' : 'Mô tả (tùy chọn)',
+                    border: const OutlineInputBorder(),
                   ),
                 ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: Text(
-                  _saving
-                      ? 'Đang lưu...'
-                      : widget.initialDeck == null
-                      ? 'Tạo bộ mới'
-                      : 'Lưu thay đổi',
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: Text(
+                    _saving
+                        ? (isEnglish ? 'Saving...' : 'Đang lưu...')
+                        : widget.initialDeck == null
+                        ? (isEnglish ? 'Create deck' : 'Tạo bộ mới')
+                        : (isEnglish ? 'Save changes' : 'Lưu thay đổi'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class ManageDeckContentsScreen extends StatelessWidget {

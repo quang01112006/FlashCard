@@ -109,10 +109,33 @@ class AppStrings {
 
   // Study Screen
   String get showAnswer => isEnglish ? 'Show Answer' : 'Hiện đáp án';
-  String get ratingAgain => isEnglish ? 'Again' : 'Lại';
+  String get ratingAgain => isEnglish ? 'Again' : 'Học lại';
   String get ratingHard => isEnglish ? 'Hard' : 'Khó';
   String get ratingGood => isEnglish ? 'Good' : 'Tốt';
   String get ratingEasy => isEnglish ? 'Easy' : 'Dễ';
+  String daysCount(int days) => isEnglish ? '$days days' : '$days ngày';
+  String cardProgress(int current, int total) =>
+      isEnglish ? 'Card $current / $total' : 'Thẻ $current / $total';
+  String get currentStudyingDeck => isEnglish ? 'Studying deck' : 'Bộ đang học';
+  String get studySm2Title => isEnglish ? 'Study SM-2' : 'Học thẻ SM-2';
+  String get cardTagQuestion => isEnglish ? 'QUESTION' : 'CÂU HỎI';
+  String get cardTagAnswer => isEnglish ? 'ANSWER & EXPLANATION' : 'ĐÁP ÁN & GIẢI THÍCH';
+  String get tapCardToFlipHint => isEnglish
+      ? 'Tap card or press Show Answer below'
+      : 'Chạm vào thẻ hoặc bấm nút Hiện đáp án bên dưới';
+  String get rateCardHint => isEnglish
+      ? 'Rate your recall below to schedule next review'
+      : 'Chọn mức độ nhớ bên dưới để lên lịch ôn tiếp theo';
+  String get noDecksToStudy => isEnglish
+      ? 'No decks to study. Please create one in Decks tab.'
+      : 'Chưa có bộ thẻ để học. Hãy tạo bộ mới ở tab Bộ thẻ.';
+  String get deckDeletedSelectOther => isEnglish
+      ? 'Current deck was deleted. Please select another.'
+      : 'Bộ đang học đã bị xóa. Hãy chọn bộ khác.';
+  String get selectDeckToStudy => isEnglish
+      ? 'Select a deck to start studying.'
+      : 'Chọn một bộ thẻ để bắt đầu học.';
+  String get deletedDeck => isEnglish ? 'Deleted deck' : 'Bộ thẻ đã xóa';
   String get restartStudy => isEnglish ? 'Restart from beginning' : 'Ôn tập lại từ đầu';
   String get sessionCompleted => isEnglish ? 'Session completed' : 'Hoàn thành phiên học';
   String get greatJob => isEnglish ? 'Great job!' : 'Tuyệt vời!';
@@ -122,9 +145,40 @@ class AppStrings {
   String get noCardsInSession => isEnglish
       ? 'No cards in this study session!'
       : 'Chưa có thẻ nào trong phiên học!';
+  String get noCardsInSessionHint => isEnglish
+      ? 'Come back later or add new cards to start studying.'
+      : 'Hãy quay lại sau hoặc thêm thẻ mới để bắt đầu học tập.';
   String get undoSuccess => isEnglish
       ? 'Undone last rated card'
       : 'Đã hoàn tác câu vừa đánh giá';
+
+  // Decks Screen
+  String get decksTitle => isEnglish ? 'Decks' : 'Các bộ thẻ';
+  String get createDeck => isEnglish ? 'Create deck' : 'Tạo bộ thẻ';
+  String get manageDeck => isEnglish ? 'Manage deck' : 'Quản lý bộ thẻ';
+  String cardsCount(int n) => isEnglish ? '$n questions' : '$n câu hỏi';
+  String get studyThisDeck => isEnglish ? 'Study this deck' : 'Học bộ này';
+  String get noDecksYet => isEnglish
+      ? 'No decks yet. Tap + to create one.'
+      : 'Chưa có bộ thẻ. Nhấn + để tạo bộ mới.';
+  String get renameDeck => isEnglish ? 'Rename / description' : 'Đổi tên / mô tả';
+  String get deleteDeck => isEnglish ? 'Delete deck' : 'Xóa bộ thẻ';
+
+  // Bloom Levels & Topics
+  String get generalTopic => isEnglish ? 'General' : 'Chung';
+  String get retry => isEnglish ? 'Retry' : 'Thử lại';
+  String levelLabel(String level) {
+    if (!isEnglish) return level;
+    final lower = level.toLowerCase();
+    if (lower.contains('nhận biết') || lower.contains('nhan biet')) return 'Remember';
+    if (lower.contains('thông hiểu') || lower.contains('thong hieu')) return 'Understand';
+    if (lower.contains('vận dụng cao') || lower.contains('van dung cao')) return 'Adv. Apply';
+    if (lower.contains('vận dụng') || lower.contains('van dung')) return 'Apply';
+    if (lower.contains('phân tích') || lower.contains('phan tich')) return 'Analyze';
+    if (lower.contains('đánh giá') || lower.contains('danh gia')) return 'Evaluate';
+    if (lower.contains('sáng tạo') || lower.contains('sang tao')) return 'Create';
+    return level;
+  }
 
   // Common states
   String get comingSoon => isEnglish ? 'Coming soon' : 'Sẽ được cập nhật';
