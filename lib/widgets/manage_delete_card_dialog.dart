@@ -66,8 +66,6 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Mã thẻ: ${widget.card.id}', style: AppTextStyles.caption),
-              const SizedBox(height: 8),
               CodeTextView(
                 text: question,
                 baseStyle: AppTextStyles.body,
