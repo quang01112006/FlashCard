@@ -6,14 +6,18 @@ Chạy các lệnh sau tại thư mục gốc của dự án (thư mục chứa 
 
 ```powershell
 flutter pub get
-flutter run --dart-define=AI_WORKER_URL=https://flashcard-ai.lambao2108.workers.dev
+flutter run
 ```
 
 Nếu máy có nhiều thiết bị, thêm `-d <device-id>` vào lệnh chạy. Dùng `flutter devices` để xem danh sách thiết bị.
 
-`AI_WORKER_URL` là địa chỉ dịch vụ trung gian đã được triển khai trên Cloudflare. Ứng dụng gửi yêu cầu đến Worker; Worker gọi Gemini bằng khóa được lưu trên Cloudflare. Đồng đội chỉ cần dùng lệnh trên, không cần tạo Worker, cài Wrangler hay nhập Gemini API key.
+Ứng dụng mặc định dùng Worker `https://flashcard-ai.lambao2108.workers.dev`. Worker gọi Gemini bằng khóa được lưu trên Cloudflare. Đồng đội chỉ cần dùng lệnh trên, không cần tạo Worker, cài Wrangler hay nhập Gemini API key. URL công khai này không phải khóa API.
 
-Nếu chạy bằng `flutter run` thông thường, các chức năng quản lý/học thẻ vẫn dùng được; chức năng tạo thẻ AI sẽ báo chưa cấu hình địa chỉ dịch vụ.
+Khi cần dùng Worker khác, có thể ghi đè URL mặc định:
+
+```powershell
+flutter run --dart-define=AI_WORKER_URL=https://worker-khac.example.workers.dev
+```
 
 ### Thử tạo thẻ AI
 
@@ -27,19 +31,19 @@ Nên thử với 2 thẻ trước. Nội dung AI cần được kiểm tra trư�
 
 ### Chạy lại và build APK
 
-Nếu ứng dụng đang chạy bằng lệnh có `--dart-define` ở trên, có thể nhấn `r` để hot reload hoặc `R` để hot restart trong terminal Flutter.
+Khi ứng dụng đang chạy, có thể nhấn `r` để hot reload hoặc `R` để hot restart trong terminal Flutter.
 
 Khi thêm hoặc đổi `AI_WORKER_URL`, cần dừng phiên chạy bằng `q` rồi chạy lại toàn bộ lệnh. Hot reload/hot restart không cập nhật giá trị `--dart-define` của phiên đang chạy.
 
-Khi build APK để demo, cũng phải truyền địa chỉ Worker:
+Khi build APK để demo, URL mặc định cũng được dùng:
 
 ```powershell
-flutter build apk --release --dart-define=AI_WORKER_URL=https://flashcard-ai.lambao2108.workers.dev
+flutter build apk --release
 ```
 
 ### Khi gặp lỗi AI
 
-- **Chưa cấu hình địa chỉ dịch vụ AI:** dừng app và chạy lại bằng lệnh đầy đủ ở trên.
+- **Chưa cấu hình địa chỉ dịch vụ AI:** kiểm tra xem có truyền `AI_WORKER_URL` rỗng hoặc sai định dạng không; dừng app rồi chạy lại bằng `flutter run` để dùng URL mặc định.
 - **Không thể kết nối / quá thời gian:** kiểm tra Internet rồi thử lại.
 - **Đạt giới hạn yêu cầu:** Worker hiện giới hạn khoảng 5 yêu cầu/phút theo IP; chờ ít nhất một phút trước khi thử lại. Người dùng chung mạng có thể dùng chung giới hạn này. Hạn mức Gemini được tính riêng.
 - **Gemini tạm thời quá tải hoặc không khả dụng:** chờ một lúc rồi thử lại.

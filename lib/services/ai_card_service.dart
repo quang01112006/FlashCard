@@ -71,7 +71,10 @@ class AiCardException implements Exception {
 
 class WorkerAiCardService implements AiCardService {
   const WorkerAiCardService({
-    this.endpoint = const String.fromEnvironment('AI_WORKER_URL'),
+    this.endpoint = const String.fromEnvironment(
+      'AI_WORKER_URL',
+      defaultValue: 'https://flashcard-ai.lambao2108.workers.dev',
+    ),
     this.client,
   });
   final String endpoint;

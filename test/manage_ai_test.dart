@@ -272,7 +272,7 @@ void main() {
         throwsA(isA<AiCardException>()),
       );
       await expectLater(
-        const WorkerAiCardService().generate(request),
+        const WorkerAiCardService(endpoint: '').generate(request),
         throwsA(isA<AiCardException>()),
       );
     },
