@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _selectedTopic = 'ALL';
+  int _previewLimit = 5;
 
   void _startStudy({String? topicCode}) {
     Navigator.of(context).push(
@@ -224,17 +225,19 @@ class _HomeScreenState extends State<HomeScreen> {
         .where((c) => c.repetitions >= 3 && c.interval >= 6)
         .length;
 
-    final List<Flashcard> displayCards;
+    final List<Flashcard> allDisplayCards;
     final String listSectionTitle;
 
     if (currentSelectedTopic == 'ALL') {
       final dueCards = controller.cards.where((c) => c.isDueToday).toList();
-      displayCards = dueCards;
+      allDisplayCards = dueCards;
       listSectionTitle = 'Thẻ đến hạn hôm nay (${dueCards.length})';
     } else {
-      displayCards = controller.getCardsByTopic(currentSelectedTopic);
-      listSectionTitle = 'Khối $currentSelectedTopic (${displayCards.length} thẻ)';
+      allDisplayCards = controller.getCardsByTopic(currentSelectedTopic);
+      listSectionTitle = 'Khối $currentSelectedTopic (${allDisplayCards.length} thẻ)';
     }
+
+    final visibleCards = allDisplayCards.take(_previewLimit).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -370,6 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onSelected: (_) {
                                 setState(() {
                                   _selectedTopic = topic;
+                                  _previewLimit = 5;
                                 });
                               },
                             ),
@@ -385,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           listSectionTitle,
                           style: AppTextStyles.subHeading.copyWith(fontSize: 15),
                         ),
-                        if (currentSelectedTopic != 'ALL' && displayCards.isNotEmpty)
+                        if (currentSelectedTopic != 'ALL' && allDisplayCards.isNotEmpty)
                           TextButton.icon(
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
@@ -401,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    if (displayCards.isEmpty)
+                    if (allDisplayCards.isEmpty)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
@@ -450,13 +454,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       )
-                    else
+                    else ...[
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: displayCards.length,
+                        itemCount: visibleCards.length,
                         itemBuilder: (context, index) {
-                          final card = displayCards[index];
+                          final card = visibleCards[index];
                           final isCardDue = card.isDueToday;
 
                           return Card(
@@ -558,6 +562,52 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
+                      if (allDisplayCards.length > 5)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 12),
+                          child: Row(
+                            children: [
+                              if (allDisplayCards.length > _previewLimit)
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: isDark ? Colors.grey.shade200 : AppColors.primary,
+                                      side: BorderSide(
+                                        color: isDark ? const Color(0xFF334155) : AppColors.border,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    icon: const Icon(Icons.expand_more, size: 18),
+                                    label: Text(
+                                      'Xem thêm (${visibleCards.length} / ${allDisplayCards.length})',
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _previewLimit += 10;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              if (_previewLimit > 5) ...[
+                                const SizedBox(width: 8),
+                                IconButton.outlined(
+                                  tooltip: 'Thu gọn danh sách',
+                                  style: IconButton.outlinedButtonTheme.style,
+                                  icon: const Icon(Icons.expand_less, size: 18),
+                                  onPressed: () {
+                                    setState(() {
+                                      _previewLimit = 5;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                    ],
                   ],
                 ),
               ),
