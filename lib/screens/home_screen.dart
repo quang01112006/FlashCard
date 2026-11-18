@@ -90,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          card.topicCode.isNotEmpty ? card.topicCode : 'Chung',
+                          card.topicCode.isNotEmpty ? card.topicCode : strings.generalTopic,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          card.level,
+                          strings.levelLabel(card.level),
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? Colors.grey.shade300 : AppColors.textSecondary,
@@ -580,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        card.topicCode.isNotEmpty ? card.topicCode : 'Chung',
+                                        card.topicCode.isNotEmpty ? card.topicCode : strings.generalTopic,
                                         maxLines: 1,
                                         softWrap: false,
                                         overflow: TextOverflow.ellipsis,
@@ -619,7 +619,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   borderRadius: BorderRadius.circular(4),
                                                 ),
                                                 child: Text(
-                                                  card.level,
+                                                  strings.levelLabel(card.level),
                                                   style: TextStyle(
                                                     fontSize: 11,
                                                     color: isDark ? Colors.grey.shade300 : AppColors.textSecondary,
