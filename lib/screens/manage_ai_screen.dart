@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/manage_select_field.dart';
+
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
@@ -185,7 +188,9 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) {
     final controller = context.watch<CardController>();
     final deck = controller.deckById(widget.deckId);
     final busy = _generating || _saving || controller.isSaving;
@@ -251,97 +256,104 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
 
   Widget _buildForm(String deckName, bool busy) => Form(
     key: _form,
-    child: ListView(
+    child: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          _strings.deck(deckName),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          _strings.text(
-            'Nội dung có thể chưa chính xác. Hãy kiểm tra và chỉnh sửa trước khi dùng để học.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            _strings.deck(deckName),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          key: const ValueKey('manage_ai_topic'),
-          controller: _topic,
-          enabled: !busy,
-          maxLines: 3,
-          minLines: 2,
-          maxLength: 500,
-          decoration: InputDecoration(
-            labelText: _strings.text('Chủ đề hoặc kiến thức'),
-            hintText: _strings.text('Ví dụ: các kỹ thuật luộc trứng'),
-            border: OutlineInputBorder(),
-          ),
-          validator: (value) => value == null || value.trim().isEmpty
-              ? _strings.text('Vui lòng nhập chủ đề hoặc kiến thức.')
-              : null,
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<int>(
-          key: const ValueKey('manage_ai_count'),
-          initialValue: _count,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: _strings.text('Số thẻ'),
-            border: OutlineInputBorder(),
-          ),
-          items: [
-            for (var i = 1; i <= 10; i++)
-              DropdownMenuItem(value: i, child: Text(_strings.count(i))),
-          ],
-          onChanged: busy ? null : (value) => setState(() => _count = value!),
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          key: const ValueKey('manage_ai_level'),
-          initialValue: _level,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: _strings.text('Mức độ'),
-            border: OutlineInputBorder(),
-          ),
-          items: [
-            for (final level in ManageCardFilter.levels)
-              DropdownMenuItem(value: level, child: Text(_strings.text(level))),
-          ],
-          onChanged: busy ? null : (value) => setState(() => _level = value!),
-        ),
-        SwitchListTile(
-          key: const ValueKey('manage_ai_bilingual'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(_strings.text('Tạo thêm bản tiếng Anh')),
-          value: _bilingual,
-          onChanged: busy
-              ? null
-              : (value) => setState(() => _bilingual = value),
-        ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              _strings.error(_error!),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          const SizedBox(height: 12),
+          Text(
+            _strings.text(
+              'Nội dung có thể chưa chính xác. Hãy kiểm tra và chỉnh sửa trước khi dùng để học.',
             ),
           ),
-        ElevatedButton(
-          key: const ValueKey('manage_ai_generate'),
-          onPressed:
-              busy ||
-                  context.read<CardController>().deckById(widget.deckId) == null
-              ? null
-              : _generate,
-          child: Text(
-            _generating
-                ? _strings.text('Đang tạo...')
-                : _strings.text('Tạo bản nháp'),
+          const SizedBox(height: 16),
+          TextFormField(
+            key: const ValueKey('manage_ai_topic'),
+            controller: _topic,
+            enabled: !busy,
+            maxLines: 3,
+            minLines: 2,
+            maxLength: 500,
+            decoration: InputDecoration(
+              labelText: _strings.text('Chủ đề hoặc kiến thức'),
+              hintText: _strings.text('Ví dụ: các kỹ thuật luộc trứng'),
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) => value == null || value.trim().isEmpty
+                ? _strings.text('Vui lòng nhập chủ đề hoặc kiến thức.')
+                : null,
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          ManageSelectField<int>(
+            isEnglish: _strings.isEnglish,
+            key: const ValueKey('manage_ai_count'),
+            initialValue: _count,
+            decoration: InputDecoration(
+              labelText: _strings.text('Số thẻ'),
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (var i = 1; i <= 10; i++)
+                DropdownMenuItem(value: i, child: Text(_strings.count(i))),
+            ],
+            onChanged: busy ? null : (value) => setState(() => _count = value!),
+          ),
+          const SizedBox(height: 16),
+          ManageSelectField<String>(
+            isEnglish: _strings.isEnglish,
+            key: const ValueKey('manage_ai_level'),
+            initialValue: _level,
+            decoration: InputDecoration(
+              labelText: _strings.text('Mức độ'),
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (final level in ManageCardFilter.levels)
+                DropdownMenuItem(
+                  value: level,
+                  child: Text(_strings.text(level)),
+                ),
+            ],
+            onChanged: busy ? null : (value) => setState(() => _level = value!),
+          ),
+          SwitchListTile(
+            key: const ValueKey('manage_ai_bilingual'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(_strings.text('Tạo thêm bản tiếng Anh')),
+            value: _bilingual,
+            onChanged: busy
+                ? null
+                : (value) => setState(() => _bilingual = value),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                _strings.error(_error!),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ElevatedButton(
+            key: const ValueKey('manage_ai_generate'),
+            onPressed:
+                busy ||
+                    context.read<CardController>().deckById(widget.deckId) ==
+                        null
+                ? null
+                : _generate,
+            child: Text(
+              _generating
+                  ? _strings.text('Đang tạo...')
+                  : _strings.text('Tạo bản nháp'),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 

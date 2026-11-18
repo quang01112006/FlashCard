@@ -61,6 +61,7 @@ void main() {
         250,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('manage_ai_generate')));
       await tester.pumpAndSettle();
       expect(find.text('5/5 cards selected'), findsOneWidget);
@@ -72,6 +73,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const PageStorageKey('manage_ai_draft_0')),
       );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const PageStorageKey('manage_ai_draft_0')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(
@@ -162,6 +164,7 @@ void main() {
         250,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('manage_ai_generate')));
       await tester.pumpAndSettle();
       expect(

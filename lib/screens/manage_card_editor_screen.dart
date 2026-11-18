@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/manage_select_field.dart';
+
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
@@ -149,7 +152,9 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) {
     context.watch<CardController>();
     return PopScope<Object?>(
       canPop: _allowPop || (!_dirty && !_saving),
@@ -313,10 +318,10 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
     List<String> options,
     ValueChanged<String> onChanged,
   ) {
-    return DropdownButtonFormField<String>(
+    return ManageSelectField<String>(
+      isEnglish: _strings.isEnglish,
       key: ValueKey(key),
       initialValue: value,
-      isExpanded: true,
       items: [
         for (final option in {...options, value})
           DropdownMenuItem(value: option, child: Text(_strings.text(option))),

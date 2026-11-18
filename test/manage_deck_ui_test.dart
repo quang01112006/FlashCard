@@ -109,7 +109,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('manage_move_destination')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Học Flutter').last);
+    await tester.tapAt(tester.getCenter(find.text('Học Flutter').last));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('manage_deck_action_confirm')));
     await tester.pumpAndSettle();

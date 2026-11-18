@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/manage_select_field.dart';
+
 import 'package:flutter/foundation.dart';
 
 import '../services/csv_service.dart';
@@ -85,7 +88,9 @@ class _ManageCsvMappingScreenState extends State<ManageCsvMappingScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope<int>(
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) => PopScope<int>(
     canPop: !_busy,
     child: Scaffold(
       appBar: AppBar(title: const Text('Ghép cột CSV')),
@@ -114,13 +119,9 @@ class _ManageCsvMappingScreenState extends State<ManageCsvMappingScreen> {
             for (final field in labels.entries)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: DropdownButtonFormField<int>(
-                  key: ValueKey(
-                    'manage_csv_map_${field.key}_${_header}_${_mapping[field.key]}',
-                  ),
+                child: ManageSelectField<int>(
+                  key: ValueKey('manage_csv_map_${field.key}'),
                   initialValue: _mapping[field.key] ?? -1,
-                  itemHeight: null,
-                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText:
                         '${field.value}${field.key == 'front' || field.key == 'back' ? ' *' : ''}',

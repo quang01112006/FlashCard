@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/manage_select_field.dart';
+
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
@@ -113,7 +116,9 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) {
     final result = CsvImportResult(
       cards: _drafts,
       errors: widget.result.errors,
@@ -182,10 +187,9 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                         if (result.needsTopic && result.needsLevel)
                           const SizedBox(height: 16),
                         if (result.needsLevel)
-                          DropdownButtonFormField<String>(
+                          ManageSelectField<String>(
                             key: const ValueKey('manage_csv_level'),
                             initialValue: _level,
-                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Mức độ mặc định',
                               border: OutlineInputBorder(),

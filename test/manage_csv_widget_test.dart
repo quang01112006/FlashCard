@@ -1,3 +1,5 @@
+import 'package:flashcard_sm2/widgets/manage_select_field.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -221,15 +223,13 @@ void main() {
     );
     Future<void> select(String label, String option) async {
       final field = find.byWidgetPredicate(
-        (w) =>
-            w is DropdownButtonFormField<int> &&
-            w.decoration.labelText == label,
+        (w) => w is ManageSelectField<int> && w.decoration.labelText == label,
       );
       await tester.ensureVisible(field);
       await tester.pumpAndSettle();
       await tester.tap(field);
       await tester.pumpAndSettle();
-      await tester.tap(find.text(option).last);
+      await tester.tapAt(tester.getCenter(find.text(option).last));
       await tester.pumpAndSettle();
     }
 

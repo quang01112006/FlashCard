@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/manage_select_field.dart';
+
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
@@ -63,7 +66,10 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(body: _buildContent(context));
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) =>
+      Scaffold(body: _buildContent(context));
 
   Widget _buildContent(BuildContext context) {
     final controller = context.watch<CardController>();
@@ -100,11 +106,14 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: DropdownButtonFormField<String>(
-              key: ValueKey('study_deck_picker_${_selected ?? 'none'}'),
+            child: ManageSelectField<String>(
+              searchableSheet: true,
+              isEnglish: controller.isEnglish,
+              subtitle: (id) => controller.isEnglish
+                  ? '${controller.cardsInDeck(id).length} cards'
+                  : '${controller.cardsInDeck(id).length} câu hỏi',
+              key: const ValueKey('study_deck_picker'),
               initialValue: _selected,
-              isExpanded: true,
-              itemHeight: null,
               decoration: const InputDecoration(
                 labelText: 'Bộ đang học',
                 border: OutlineInputBorder(),

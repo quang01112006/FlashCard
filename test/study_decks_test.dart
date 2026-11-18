@@ -1,3 +1,5 @@
+import 'package:flashcard_sm2/widgets/manage_select_field.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -24,7 +26,7 @@ Flashcard _card(String id, String deck) => Flashcard(
 );
 Finder get _picker => find.byWidgetPredicate(
   (w) =>
-      w is DropdownButtonFormField<String> &&
+      w is ManageSelectField<String> &&
       w.key.toString().contains('study_deck_picker'),
 );
 Finder get _undo => find.byWidgetPredicate(
@@ -33,7 +35,19 @@ Finder get _undo => find.byWidgetPredicate(
 Future<void> _choose(WidgetTester tester, String name) async {
   await tester.tap(_picker);
   await tester.pumpAndSettle();
-  await tester.tap(find.text(name).last);
+  final choice = find.descendant(
+    of: find.byType(BottomSheet),
+    matching: find.text(name),
+  );
+  final menu = find
+      .descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byType(Scrollable),
+      )
+      .last;
+  await tester.scrollUntilVisible(choice, 150, scrollable: menu);
+  await tester.pumpAndSettle();
+  await tester.tapAt(tester.getCenter(choice));
   await tester.pumpAndSettle();
 }
 
@@ -260,7 +274,7 @@ void main() {
       await tester.tap(find.text('Tốt'));
       await tester.pump();
       expect(
-        tester.widget<DropdownButtonFormField<String>>(_picker).onChanged,
+        tester.widget<ManageSelectField<String>>(_picker).onChanged,
         isNull,
       );
       gate.complete();

@@ -1,3 +1,5 @@
+import 'package:flashcard_sm2/widgets/manage_select_field.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -97,7 +99,8 @@ Future<void> _selectFilter(
   final menu = find.byType(Scrollable).last;
   final choice = find.descendant(of: menu, matching: find.text(option));
   await tester.scrollUntilVisible(choice, 160, scrollable: menu);
-  await tester.tap(choice);
+  await tester.pumpAndSettle();
+  await tester.tapAt(tester.getCenter(choice));
   await tester.pumpAndSettle();
 }
 
@@ -675,10 +678,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<DropdownButton<String>>(
+          .widget<ManageSelectField<String>>(
             find.byKey(const ValueKey('manage_filter_topic')),
           )
-          .value,
+          .initialValue,
       'K01',
     );
     await tester.tap(find.text('Đặt lại'));

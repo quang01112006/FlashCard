@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_theme.dart';
+import 'manage_select_field.dart';
+
 import '../services/manage_card_filter.dart';
 
 class ManageCardFiltersSheet extends StatefulWidget {
@@ -24,7 +25,9 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
   late String? _level = widget.initialFilter.level;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) {
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -33,7 +36,7 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Lọc bộ thẻ', style: AppTextStyles.heading),
+            Text('Lọc bộ thẻ', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 20),
             _buildDropdown(
               fieldKey: 'manage_filter_topic',
@@ -85,26 +88,16 @@ class _ManageCardFiltersSheetState extends State<ManageCardFiltersSheet> {
     required List<String> options,
     required ValueChanged<String?> onChanged,
   }) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          key: ValueKey(fieldKey),
-          value: selected ?? '',
-          isExpanded: true,
-          itemHeight: null,
-          style: AppTextStyles.body,
-          items: [
-            DropdownMenuItem(value: '', child: Text(allLabel)),
-            for (final option in options)
-              DropdownMenuItem(value: option, child: Text(option)),
-          ],
-          onChanged: (value) => onChanged(value == '' ? null : value),
-        ),
-      ),
+    return ManageSelectField<String>(
+      key: ValueKey(fieldKey),
+      initialValue: selected ?? '',
+      decoration: InputDecoration(labelText: label),
+      items: [
+        DropdownMenuItem(value: '', child: Text(allLabel)),
+        for (final option in options)
+          DropdownMenuItem(value: option, child: Text(option)),
+      ],
+      onChanged: (value) => onChanged(value == '' ? null : value),
     );
   }
 }

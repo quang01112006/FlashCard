@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'manage_select_field.dart';
+
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
@@ -55,7 +58,9 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _buildScreen(context);
+
+  Widget _buildScreen(BuildContext context) {
     final controller = context.watch<CardController>();
     final destinations = controller.decks
         .where((deck) => deck.id != widget.deck.id)
@@ -82,10 +87,13 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
                 if (destinations.isEmpty)
                   const Text('Hãy tạo một bộ thẻ khác trước khi chuyển.')
                 else
-                  DropdownButtonFormField<String>(
+                  ManageSelectField<String>(
+                    searchableSheet: true,
+                    isEnglish: controller.isEnglish,
+                    subtitle: (id) => controller.isEnglish
+                        ? '${controller.cardsInDeck(id).length} cards'
+                        : '${controller.cardsInDeck(id).length} câu hỏi',
                     key: const ValueKey('manage_move_destination'),
-                    isExpanded: true,
-                    itemHeight: null,
                     initialValue: _target,
                     decoration: const InputDecoration(
                       labelText: 'Bộ nhận',
@@ -95,7 +103,11 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
                       for (final deck in destinations)
                         DropdownMenuItem(
                           value: deck.id,
-                          child: Text(deck.name),
+                          child: Text(
+                            deck.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                     onChanged: _saving
