@@ -156,7 +156,9 @@ class CardController extends ChangeNotifier {
       _reminderTime = time;
     }
     if (enabled) {
-      await NotificationService.scheduleDailyReminder(selectedTime: _reminderTime);
+      await NotificationService.scheduleDailyReminder(
+        selectedTime: _reminderTime,
+      );
     } else {
       await NotificationService.cancelReminder();
     }
@@ -171,15 +173,23 @@ class CardController extends ChangeNotifier {
     _notify();
 
     try {
-      final jsonString = await _assetBundle.loadString('assets/default_cards.json');
+      final jsonString = await _assetBundle.loadString(
+        'assets/default_cards.json',
+      );
       final defaultCards = decodeManageCards(jsonDecode(jsonString));
 
-      final deckStore = _store is ManageDeckStore ? _store as ManageDeckStore : null;
+      final deckStore = _store is ManageDeckStore
+          ? _store as ManageDeckStore
+          : null;
       if (deckStore != null) {
-        await deckStore.writeCollection(DeckCollection(
-          decks: [const CardDeck(id: CardDeck.flutterId, name: 'Học Flutter')],
-          cards: defaultCards,
-        ));
+        await deckStore.writeCollection(
+          DeckCollection(
+            decks: [
+              const CardDeck(id: CardDeck.flutterId, name: 'Học Flutter'),
+            ],
+            cards: defaultCards,
+          ),
+        );
       } else {
         await _store.write(defaultCards);
       }

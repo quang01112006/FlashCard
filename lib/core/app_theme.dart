@@ -17,24 +17,16 @@ class AppColors {
 
 /// Kiểu chữ
 class AppTextStyles {
-  static const heading = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static const heading = TextStyle(fontSize: 22, fontWeight: FontWeight.bold);
 
   static const subHeading = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
   );
 
-  static const body = TextStyle(fontSize: 15, color: AppColors.textPrimary);
+  static const body = TextStyle(fontSize: 15);
 
-  static const caption = TextStyle(
-    fontSize: 13,
-    color: AppColors.textSecondary,
-  );
+  static const caption = TextStyle(fontSize: 13);
 }
 
 /// Cấu hình ThemeData áp dụng trực tiếp vào MaterialApp

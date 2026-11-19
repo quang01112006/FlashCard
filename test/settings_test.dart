@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flashcard_sm2/services/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flashcard_sm2/l10n/app_strings.dart';
+import 'package:flashcard_sm2/core/app_theme.dart';
 
 void main() {
   group('AppStrings - Vietnamese', () {
@@ -36,6 +37,40 @@ void main() {
     });
   });
 
+  group('AppStrings - Notification messages', () {
+    test('Returns Vietnamese notification messages', () {
+      const strings = AppStrings(false);
+
+      expect(strings.notificationPermissionDenied, isNotEmpty);
+      expect(strings.notificationScheduleFailed, isNotEmpty);
+      expect(strings.reminderNotificationTitle, isNotEmpty);
+      expect(strings.reminderNotificationBody, isNotEmpty);
+      expect(strings.reminderChannelName, isNotEmpty);
+      expect(strings.reminderChannelDescription, isNotEmpty);
+      expect(strings.resetFailed, isNotEmpty);
+    });
+
+    test('Returns English notification messages', () {
+      const strings = AppStrings(true);
+
+      expect(strings.notificationPermissionDenied, isNotEmpty);
+      expect(strings.notificationScheduleFailed, isNotEmpty);
+      expect(strings.reminderNotificationTitle, isNotEmpty);
+      expect(strings.reminderNotificationBody, isNotEmpty);
+      expect(strings.reminderChannelName, isNotEmpty);
+      expect(strings.reminderChannelDescription, isNotEmpty);
+      expect(strings.resetFailed, isNotEmpty);
+    });
+  });
+
+  group('AppTheme - adaptive text styles', () {
+    test('Shared text styles do not force light-mode text colors', () {
+      expect(AppTextStyles.heading.color, isNull);
+      expect(AppTextStyles.subHeading.color, isNull);
+      expect(AppTextStyles.body.color, isNull);
+      expect(AppTextStyles.caption.color, isNull);
+    });
+  });
 
   group('NotificationService - Reminder time calculation', () {
     test('Selected time is later than now: schedule today', () {
@@ -71,15 +106,15 @@ void main() {
       expect(result, DateTime(2026, 11, 18, 16, 0));
     });
 
-    test('Reminder correctly moves to the next month', () {
-      final now = DateTime(2026, 11, 30, 20, 0);
+    test('Reminder correctly moves to the next year', () {
+      final now = DateTime(2026, 12, 31, 23, 0);
 
       final result = NotificationService.calculateNextReminder(
         now: now,
-        selectedTime: const TimeOfDay(hour: 19, minute: 0),
+        selectedTime: const TimeOfDay(hour: 7, minute: 30),
       );
 
-      expect(result, DateTime(2026, 12, 1, 19, 0));
+      expect(result, DateTime(2027, 1, 1, 7, 30));
     });
   });
 }

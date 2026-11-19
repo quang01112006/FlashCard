@@ -9,7 +9,11 @@ import '../services/notification_service.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  Future<void> _pickReminderTime(BuildContext context, CardController controller, AppStrings strings) async {
+  Future<void> _pickReminderTime(
+    BuildContext context,
+    CardController controller,
+    AppStrings strings,
+  ) async {
     final picked = await showTimePicker(
       context: context,
       initialTime: controller.reminderTime,
@@ -31,7 +35,11 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  void _confirmResetData(BuildContext context, CardController controller, AppStrings strings) {
+  void _confirmResetData(
+    BuildContext context,
+    CardController controller,
+    AppStrings strings,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -74,38 +82,23 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          strings.settings,
-          style: AppTextStyles.heading,
-        ),
+        title: Text(strings.settings, style: AppTextStyles.heading),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            strings.settingsDescription,
-            style: AppTextStyles.body,
-          ),
+          Text(strings.settingsDescription, style: AppTextStyles.body),
 
           const SizedBox(height: 20),
 
           // LANGUAGE
-          _buildSectionTitle(
-            strings.language,
-            Icons.language,
-          ),
+          _buildSectionTitle(strings.language, Icons.language),
 
           Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.translate,
-                color: AppColors.primary,
-              ),
-              title: Text(
-                strings.language,
-                style: AppTextStyles.body,
-              ),
+              leading: const Icon(Icons.translate, color: AppColors.primary),
+              title: Text(strings.language, style: AppTextStyles.body),
               subtitle: Text(
                 strings.languageDescription,
                 style: AppTextStyles.caption,
@@ -119,11 +112,17 @@ class SettingsScreen extends StatelessWidget {
                     items: [
                       DropdownMenuItem(
                         value: false,
-                        child: Text(strings.vietnamese, overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          strings.vietnamese,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       DropdownMenuItem(
                         value: true,
-                        child: Text(strings.english, overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          strings.english,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                     onChanged: (value) {
@@ -140,10 +139,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // APPEARANCE
-          _buildSectionTitle(
-            strings.appearance,
-            Icons.palette_outlined,
-          ),
+          _buildSectionTitle(strings.appearance, Icons.palette_outlined),
 
           Card(
             child: SwitchListTile(
@@ -151,10 +147,7 @@ class SettingsScreen extends StatelessWidget {
                 Icons.dark_mode_outlined,
                 color: AppColors.primary,
               ),
-              title: Text(
-                strings.darkMode,
-                style: AppTextStyles.body,
-              ),
+              title: Text(strings.darkMode, style: AppTextStyles.body),
               subtitle: Text(
                 strings.darkModeDescription,
                 style: AppTextStyles.caption,
@@ -181,12 +174,11 @@ class SettingsScreen extends StatelessWidget {
                 SwitchListTile(
                   secondary: Icon(
                     Icons.notifications_active_outlined,
-                    color: controller.isReminderEnabled ? AppColors.primary : AppColors.textSecondary,
+                    color: controller.isReminderEnabled
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                   ),
-                  title: Text(
-                    strings.dailyReminder,
-                    style: AppTextStyles.body,
-                  ),
+                  title: Text(strings.dailyReminder, style: AppTextStyles.body),
                   subtitle: Text(
                     controller.isReminderEnabled
                         ? strings.notificationEnabled
@@ -205,9 +197,11 @@ class SettingsScreen extends StatelessWidget {
                           '${controller.reminderTime.hour.toString().padLeft(2, '0')}:${controller.reminderTime.minute.toString().padLeft(2, '0')}';
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(enabled
-                              ? strings.reminderSetAt(timeStr)
-                              : strings.notificationDisabled),
+                          content: Text(
+                            enabled
+                                ? strings.reminderSetAt(timeStr)
+                                : strings.notificationDisabled,
+                          ),
                           duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -237,7 +231,8 @@ class SettingsScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onTap: () => _pickReminderTime(context, controller, strings),
+                    onTap: () =>
+                        _pickReminderTime(context, controller, strings),
                   ),
                 ],
               ],
@@ -247,17 +242,11 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // RESET DATA
-          _buildSectionTitle(
-            strings.resetData,
-            Icons.restore,
-          ),
+          _buildSectionTitle(strings.resetData, Icons.restore),
 
           Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.restore,
-                color: AppColors.danger,
-              ),
+              leading: const Icon(Icons.restore, color: AppColors.danger),
               title: Text(
                 strings.resetData,
                 style: AppTextStyles.body.copyWith(color: AppColors.danger),
@@ -284,16 +273,9 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: AppColors.primary,
-            size: 20,
-          ),
+          Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: AppTextStyles.subHeading,
-          ),
+          Text(title, style: AppTextStyles.subHeading),
         ],
       ),
     );

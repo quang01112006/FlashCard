@@ -37,16 +37,38 @@ class AppStrings {
   String get dailyReminderDescription => isEnglish
       ? 'Receive a reminder to review your flashcards every day'
       : 'Nhận thông báo nhắc bạn ôn tập thẻ mỗi ngày';
-  String get reminderTime =>
-      isEnglish ? 'Reminder time' : 'Thời gian nhắc nhở';
-  String get reminderTimeDescription =>
-      isEnglish ? 'Tap to choose your reminder time' : 'Chạm để chọn giờ nhắc nhở';
+  String get reminderTime => isEnglish ? 'Reminder time' : 'Thời gian nhắc nhở';
+  String get reminderTimeDescription => isEnglish
+      ? 'Tap to choose your reminder time'
+      : 'Chạm để chọn giờ nhắc nhở';
   String get notificationEnabled =>
       isEnglish ? 'Daily reminder enabled' : 'Đã bật nhắc nhở hằng ngày';
   String get notificationDisabled =>
       isEnglish ? 'Daily reminder disabled' : 'Đã tắt nhắc nhở hằng ngày';
-  String reminderSetAt(String time) =>
-      isEnglish ? 'Reminder scheduled for $time' : 'Đã hẹn giờ nhắc nhở vào lúc $time';
+  String reminderSetAt(String time) => isEnglish
+      ? 'Reminder scheduled for $time'
+      : 'Đã hẹn giờ nhắc nhở vào lúc $time';
+  String get notificationPermissionDenied => isEnglish
+      ? 'Notification permission was not granted. Reminders remain disabled.'
+      : 'Bạn chưa cấp quyền thông báo. Nhắc nhở vẫn đang tắt.';
+
+  String get notificationScheduleFailed => isEnglish
+      ? 'Could not schedule the reminder. Please check notification permissions.'
+      : 'Không thể đặt lịch nhắc nhở. Vui lòng kiểm tra quyền thông báo.';
+
+  String get reminderNotificationTitle =>
+      isEnglish ? 'Flashcard study reminder' : 'Nhắc nhở học Flashcard';
+
+  String get reminderNotificationBody => isEnglish
+      ? 'It is time to review your flashcards. Spend five minutes learning today!'
+      : 'Đã đến giờ ôn tập thẻ hôm nay rồi! Hãy dành 5 phút nhé.';
+
+  String get reminderChannelName =>
+      isEnglish ? 'Daily study reminder' : 'Nhắc nhở học tập';
+
+  String get reminderChannelDescription => isEnglish
+      ? 'Daily reminder to review your Flashcard SM-2 cards'
+      : 'Thông báo nhắc nhở ôn tập thẻ Flashcard SM-2 hằng ngày';
 
   // Reset data
   String get resetData =>
@@ -61,6 +83,9 @@ class AppStrings {
       : 'Dữ liệu thẻ sẽ được khôi phục về bộ dữ liệu ban đầu 300 câu hỏi.';
   String get resetSuccess =>
       isEnglish ? 'Data restored successfully' : 'Khôi phục dữ liệu thành công';
+  String get resetFailed => isEnglish
+      ? 'Could not restore the original data. Please try again.'
+      : 'Không thể khôi phục dữ liệu gốc. Vui lòng thử lại.';
 
   // Home Screen
   String get homeTitle => isEnglish ? 'Home' : 'Trang chủ';
@@ -68,28 +93,36 @@ class AppStrings {
   String get statReview => isEnglish ? 'Due review' : 'Cần ôn lại';
   String get statMastered => isEnglish ? 'Mastered' : 'Đã thuộc';
   String get statTotal => isEnglish ? 'Total' : 'Tổng số';
-  String get knowledgeTopics => isEnglish ? 'Knowledge topics' : 'Khối kiến thức';
-  String topicsCount(int count) => isEnglish ? '$count topics' : '$count chủ đề';
+  String get knowledgeTopics =>
+      isEnglish ? 'Knowledge topics' : 'Khối kiến thức';
+  String topicsCount(int count) =>
+      isEnglish ? '$count topics' : '$count chủ đề';
   String get allTopics => isEnglish ? 'All' : 'Tất cả';
   String get startReview => isEnglish ? 'Start review' : 'Bắt đầu ôn tập';
   String studyNewToday(int n) =>
       isEnglish ? 'Study $n new cards today' : 'Học $n thẻ mới hôm nay';
-  String studyDueAndNew(int due, int n) =>
-      isEnglish ? 'Review ($due due + $n new)' : 'Bắt đầu ôn tập ($due ôn lại + $n mới)';
-  String get allDoneToday =>
-      isEnglish ? 'All done for today! Custom study' : 'Đã hoàn thành hôm nay! Ôn tập tự do';
-  String get allDoneMessage =>
-      isEnglish ? 'You have completed today\'s study goal' : 'Bạn đã hoàn thành mục tiêu học tập hôm nay';
-  String get customStudyHint =>
-      isEnglish ? 'Tap "Custom study" above to practice more' : 'Nhấn nút "Ôn tập tự do" phía trên để ôn luyện thêm';
+  String studyDueAndNew(int due, int n) => isEnglish
+      ? 'Review ($due due + $n new)'
+      : 'Bắt đầu ôn tập ($due ôn lại + $n mới)';
+  String get allDoneToday => isEnglish
+      ? 'All done for today! Custom study'
+      : 'Đã hoàn thành hôm nay! Ôn tập tự do';
+  String get allDoneMessage => isEnglish
+      ? 'You have completed today\'s study goal'
+      : 'Bạn đã hoàn thành mục tiêu học tập hôm nay';
+  String get customStudyHint => isEnglish
+      ? 'Tap "Custom study" above to practice more'
+      : 'Nhấn nút "Ôn tập tự do" phía trên để ôn luyện thêm';
   String noCardsInTopic(String topic) =>
       isEnglish ? 'No cards in $topic' : 'Không có thẻ nào trong khối $topic';
-  String get chooseOtherTopic =>
-      isEnglish ? 'Please choose another topic or import cards' : 'Hãy chọn khối khác hoặc nhập thêm thẻ mới';
+  String get chooseOtherTopic => isEnglish
+      ? 'Please choose another topic or import cards'
+      : 'Hãy chọn khối khác hoặc nhập thêm thẻ mới';
   String topicCardsCount(String topic, int count) =>
       isEnglish ? 'Topic $topic ($count cards)' : 'Khối $topic ($count thẻ)';
-  String todayGoalTitle(int due, int n) =>
-      isEnglish ? 'Today\'s goal ($due review + $n new)' : 'Mục tiêu hôm nay ($due ôn lại + $n mới)';
+  String todayGoalTitle(int due, int n) => isEnglish
+      ? 'Today\'s goal ($due review + $n new)'
+      : 'Mục tiêu hôm nay ($due ôn lại + $n mới)';
   String todayNewTitle(int n) =>
       isEnglish ? 'Today\'s new cards ($n cards)' : 'Thẻ mới hôm nay ($n thẻ)';
   String get studyThisTopic => isEnglish ? 'Study this' : 'Học khối này';
@@ -119,7 +152,8 @@ class AppStrings {
   String get currentStudyingDeck => isEnglish ? 'Studying deck' : 'Bộ đang học';
   String get studySm2Title => isEnglish ? 'Study SM-2' : 'Học thẻ SM-2';
   String get cardTagQuestion => isEnglish ? 'QUESTION' : 'CÂU HỎI';
-  String get cardTagAnswer => isEnglish ? 'ANSWER & EXPLANATION' : 'ĐÁP ÁN & GIẢI THÍCH';
+  String get cardTagAnswer =>
+      isEnglish ? 'ANSWER & EXPLANATION' : 'ĐÁP ÁN & GIẢI THÍCH';
   String get tapCardToFlipHint => isEnglish
       ? 'Tap card or press Show Answer below'
       : 'Chạm vào thẻ hoặc bấm nút Hiện đáp án bên dưới';
@@ -136,8 +170,10 @@ class AppStrings {
       ? 'Select a deck to start studying.'
       : 'Chọn một bộ thẻ để bắt đầu học.';
   String get deletedDeck => isEnglish ? 'Deleted deck' : 'Bộ thẻ đã xóa';
-  String get restartStudy => isEnglish ? 'Restart from beginning' : 'Ôn tập lại từ đầu';
-  String get sessionCompleted => isEnglish ? 'Session completed' : 'Hoàn thành phiên học';
+  String get restartStudy =>
+      isEnglish ? 'Restart from beginning' : 'Ôn tập lại từ đầu';
+  String get sessionCompleted =>
+      isEnglish ? 'Session completed' : 'Hoàn thành phiên học';
   String get greatJob => isEnglish ? 'Great job!' : 'Tuyệt vời!';
   String completedMessage(int count) => isEnglish
       ? 'You completed the review session with $count cards.'
@@ -148,9 +184,8 @@ class AppStrings {
   String get noCardsInSessionHint => isEnglish
       ? 'Come back later or add new cards to start studying.'
       : 'Hãy quay lại sau hoặc thêm thẻ mới để bắt đầu học tập.';
-  String get undoSuccess => isEnglish
-      ? 'Undone last rated card'
-      : 'Đã hoàn tác câu vừa đánh giá';
+  String get undoSuccess =>
+      isEnglish ? 'Undone last rated card' : 'Đã hoàn tác câu vừa đánh giá';
 
   // Decks Screen
   String get decksTitle => isEnglish ? 'Decks' : 'Các bộ thẻ';
@@ -161,7 +196,8 @@ class AppStrings {
   String get noDecksYet => isEnglish
       ? 'No decks yet. Tap + to create one.'
       : 'Chưa có bộ thẻ. Nhấn + để tạo bộ mới.';
-  String get renameDeck => isEnglish ? 'Rename / description' : 'Đổi tên / mô tả';
+  String get renameDeck =>
+      isEnglish ? 'Rename / description' : 'Đổi tên / mô tả';
   String get deleteDeck => isEnglish ? 'Delete deck' : 'Xóa bộ thẻ';
 
   // Bloom Levels & Topics
@@ -170,13 +206,27 @@ class AppStrings {
   String levelLabel(String level) {
     if (!isEnglish) return level;
     final lower = level.toLowerCase();
-    if (lower.contains('nhận biết') || lower.contains('nhan biet')) return 'Remember';
-    if (lower.contains('thông hiểu') || lower.contains('thong hieu')) return 'Understand';
-    if (lower.contains('vận dụng cao') || lower.contains('van dung cao')) return 'Adv. Apply';
-    if (lower.contains('vận dụng') || lower.contains('van dung')) return 'Apply';
-    if (lower.contains('phân tích') || lower.contains('phan tich')) return 'Analyze';
-    if (lower.contains('đánh giá') || lower.contains('danh gia')) return 'Evaluate';
-    if (lower.contains('sáng tạo') || lower.contains('sang tao')) return 'Create';
+    if (lower.contains('nhận biết') || lower.contains('nhan biet')) {
+      return 'Remember';
+    }
+    if (lower.contains('thông hiểu') || lower.contains('thong hieu')) {
+      return 'Understand';
+    }
+    if (lower.contains('vận dụng cao') || lower.contains('van dung cao')) {
+      return 'Adv. Apply';
+    }
+    if (lower.contains('vận dụng') || lower.contains('van dung')) {
+      return 'Apply';
+    }
+    if (lower.contains('phân tích') || lower.contains('phan tich')) {
+      return 'Analyze';
+    }
+    if (lower.contains('đánh giá') || lower.contains('danh gia')) {
+      return 'Evaluate';
+    }
+    if (lower.contains('sáng tạo') || lower.contains('sang tao')) {
+      return 'Create';
+    }
     return level;
   }
 
