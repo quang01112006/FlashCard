@@ -170,13 +170,15 @@ class AppStrings {
   String levelLabel(String level) {
     if (!isEnglish) return level;
     final lower = level.toLowerCase();
-    if (lower.contains('nhận biết') || lower.contains('nhan biet')) return 'Remember';
-    if (lower.contains('thông hiểu') || lower.contains('thong hieu')) return 'Understand';
-    if (lower.contains('vận dụng cao') || lower.contains('van dung cao')) return 'Adv. Apply';
-    if (lower.contains('vận dụng') || lower.contains('van dung')) return 'Apply';
-    if (lower.contains('phân tích') || lower.contains('phan tich')) return 'Analyze';
-    if (lower.contains('đánh giá') || lower.contains('danh gia')) return 'Evaluate';
-    if (lower.contains('sáng tạo') || lower.contains('sang tao')) return 'Create';
+    if (lower.contains('nhớ') || lower.contains('nhận biết') || lower.contains('nhan biet')) {
+      return 'Remember';
+    }
+    if (lower.contains('hiểu') || lower.contains('hieu')) {
+      return 'Understand';
+    }
+    if (lower.contains('vận dụng') || lower.contains('van dung')) {
+      return 'Apply';
+    }
     return level;
   }
 
