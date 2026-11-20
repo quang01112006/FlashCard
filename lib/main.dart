@@ -28,7 +28,7 @@ class FlashcardApp extends StatelessWidget {
         selector: (_, controller) => controller.isDarkMode,
         builder: (context, isDarkMode, _) {
           return MaterialApp(
-            title: 'Flashcard SM-2',
+            title: 'Memora',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
