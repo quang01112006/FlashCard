@@ -48,6 +48,7 @@ class ManageAiStrings {
     'Vận dụng': 'Apply',
     'Tạo thêm bản tiếng Anh': 'Include English translations',
     'Đang tạo...': 'Generating...',
+    'Demo': 'Demo',
     'Tạo bản nháp': 'Generate drafts',
     'Hãy kiểm tra và chỉnh sửa nội dung AI trước khi lưu.':
         'Review and edit the AI content before saving.',

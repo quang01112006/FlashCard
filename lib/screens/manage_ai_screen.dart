@@ -90,6 +90,33 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
     }
   }
 
+  void _loadDemoCodeDrafts() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _drafts = [
+        const AiCardDraft(
+          front: 'Làm thế nào để tạo một hàm bất đồng bộ trả về String sau 2 giây trong Dart?',
+          back: 'Sử dụng từ khóa `async` và `Future.delayed`:\n```dart\nFuture<String> fetchData() async {\n  await Future.delayed(const Duration(seconds: 2));\n  return "Dữ liệu đã tải xong!";\n}\n```',
+          level: 'Vận dụng',
+          topicCode: '',
+          frontEn: 'How to create an asynchronous function returning a String after 2 seconds in Dart?',
+          backEn: 'Use `async` and `Future.delayed`:\n```dart\nFuture<String> fetchData() async {\n  await Future.delayed(const Duration(seconds: 2));\n  return "Data loaded!";\n}\n```',
+        ),
+        const AiCardDraft(
+          front: 'Cú pháp List Comprehension trong Python để lọc các số chẵn từ 1 đến 10 là gì?',
+          back: 'Sử dụng cú pháp `[x for x in list if condition]`:\n```python\nnumbers = range(1, 11)\neven_numbers = [x for x in numbers if x % 2 == 0]\nprint(even_numbers) # [2, 4, 6, 8, 10]\n```',
+          level: 'Vận dụng',
+          topicCode: '',
+          frontEn: 'What is the Python List Comprehension syntax to filter even numbers from 1 to 10?',
+          backEn: 'Use `[x for x in list if condition]`:\n```python\nnumbers = range(1, 11)\neven_numbers = [x for x in numbers if x % 2 == 0]\nprint(even_numbers) # [2, 4, 6, 8, 10]\n```',
+        ),
+      ];
+      _selected
+        ..clear()
+        ..addAll([0, 1]);
+    });
+  }
+
   Future<void> _edit(int index) async {
     final draft = _drafts![index];
     final edited = await Navigator.push<Flashcard>(
@@ -354,6 +381,13 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                   ? _strings.text('Đang tạo...')
                   : _strings.text('Tạo bản nháp'),
             ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            key: const ValueKey('manage_ai_offline_demo'),
+            onPressed: busy ? null : _loadDemoCodeDrafts,
+            icon: const Icon(Icons.bolt_rounded),
+            label: Text(_strings.text('Demo')),
           ),
         ],
       ),
