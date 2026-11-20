@@ -4,6 +4,8 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:hive_flutter/hive_flutter.dart';
+
 import '../models/flashcard.dart';
 import '../models/card_deck.dart';
 import '../services/manage_deck_store.dart';
@@ -14,7 +16,88 @@ import '../services/notification_service.dart';
 class CardController extends ChangeNotifier {
   CardController({AssetBundle? assetBundle, ManageCardStore? store})
     : _assetBundle = assetBundle ?? rootBundle,
-      _store = store ?? HiveManageCardStore();
+      _store = store ?? HiveManageCardStore() {
+    _initSettingsFromStorage();
+  }
+
+  void _initSettingsFromStorage() {
+    try {
+      if (Hive.isBoxOpen('app_settings')) {
+        final box = Hive.box('app_settings');
+        _isDarkMode = box.get('isDarkMode', defaultValue: false) as bool;
+        _isEnglish = box.get('isEnglish', defaultValue: false) as bool;
+        _isReminderEnabled = box.get('isReminderEnabled', defaultValue: false) as bool;
+        final hour = box.get('reminderHour', defaultValue: 20) as int;
+        final minute = box.get('reminderMinute', defaultValue: 0) as int;
+        _reminderTime = TimeOfDay(hour: hour, minute: minute);
+        final dynamic savedDates = box.get('studied_dates');
+        if (savedDates is List) {
+          _studiedDates.addAll(savedDates.map((e) => e.toString()));
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _saveSetting(String key, dynamic value) {
+    if (!Hive.isBoxOpen('app_settings')) return;
+    try {
+      Hive.box('app_settings').put(key, value).catchError((_) {});
+    } catch (_) {}
+  }
+
+  final Set<String> _studiedDates = {};
+  Set<String> get studiedDates => Set.unmodifiable(_studiedDates);
+
+  void _recordStudyToday() {
+    final now = DateTime.now();
+    final dateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    if (!_studiedDates.contains(dateStr)) {
+      _studiedDates.add(dateStr);
+      _saveSetting('studied_dates', _studiedDates.toList());
+      notifyListeners();
+    }
+  }
+
+  /// Tính chuỗi ngày học streak liên tiếp thực tế từ lịch sử ôn tập
+  int get streak {
+    if (_studiedDates.isEmpty) {
+      final reviewedCount = _cards.where((c) => c.repetitions > 0).length;
+      return reviewedCount > 0 ? 1 : 0;
+    }
+
+    final now = DateTime.now();
+    var checkDate = DateTime(now.year, now.month, now.day);
+    var dateStr =
+        '${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
+
+    var count = 0;
+    if (_studiedDates.contains(dateStr)) {
+      count++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    } else {
+      final yesterday = checkDate.subtract(const Duration(days: 1));
+      final yesterdayStr =
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+      if (!_studiedDates.contains(yesterdayStr)) {
+        return 0; // Đã quá 1 ngày không học -> mất streak
+      }
+      checkDate = yesterday;
+    }
+
+    while (true) {
+      dateStr =
+          '${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
+      if (_studiedDates.contains(dateStr)) {
+        count++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+
+    return count;
+  }
 
   final AssetBundle _assetBundle;
   final ManageCardStore _store;
@@ -175,6 +258,9 @@ class CardController extends ChangeNotifier {
 
       _reminderTime = nextTime;
       _isReminderEnabled = true;
+      _saveSetting('isReminderEnabled', true);
+      _saveSetting('reminderHour', nextTime.hour);
+      _saveSetting('reminderMinute', nextTime.minute);
       _notify();
       return true;
     }
@@ -184,6 +270,7 @@ class CardController extends ChangeNotifier {
     if (!success) return false;
 
     _isReminderEnabled = false;
+    _saveSetting('isReminderEnabled', false);
     _notify();
     return true;
   }
@@ -233,6 +320,7 @@ class CardController extends ChangeNotifier {
   void setLanguage(bool isEnglish) {
     if (_isEnglish != isEnglish) {
       _isEnglish = isEnglish;
+      _saveSetting('isEnglish', isEnglish);
       notifyListeners(); // Thông báo để toàn bộ app tự đổi ngôn ngữ
     }
   }
@@ -241,6 +329,7 @@ class CardController extends ChangeNotifier {
   void setDarkMode(bool isDarkMode) {
     if (_isDarkMode != isDarkMode) {
       _isDarkMode = isDarkMode;
+      _saveSetting('isDarkMode', isDarkMode);
       notifyListeners(); // Thông báo để toàn bộ app đổi theme
     }
   }
@@ -294,15 +383,18 @@ class CardController extends ChangeNotifier {
       });
 
   /// Lưu kết quả SM-2, giữ nội dung mới nhất của thẻ.
-  Future<void> updateCard(Flashcard updatedCard) => _persist((next) {
-    final index = _indexOf(next, updatedCard.id);
-    next[index] = next[index].copyWith(
-      repetitions: updatedCard.repetitions,
-      interval: updatedCard.interval,
-      easeFactor: updatedCard.easeFactor,
-      nextReviewDate: updatedCard.nextReviewDate,
-    );
-  });
+  Future<void> updateCard(Flashcard updatedCard) async {
+    await _persist((next) {
+      final index = _indexOf(next, updatedCard.id);
+      next[index] = next[index].copyWith(
+        repetitions: updatedCard.repetitions,
+        interval: updatedCard.interval,
+        easeFactor: updatedCard.easeFactor,
+        nextReviewDate: updatedCard.nextReviewDate,
+      );
+    });
+    _recordStudyToday();
+  }
 
   int _indexOf(List<Flashcard> cards, String id) {
     final index = cards.indexWhere((card) => card.id == id);

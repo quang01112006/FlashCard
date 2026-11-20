@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
 import 'controllers/card_controller.dart';
@@ -6,8 +7,12 @@ import 'core/app_theme.dart';
 import 'screens/main_nav_screen.dart';
 import 'services/manage_card_store.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Hive.initFlutter();
+    await Hive.openBox('app_settings');
+  } catch (_) {}
   runApp(const FlashcardApp());
 }
 
