@@ -85,13 +85,23 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(strings.settings, style: AppTextStyles.heading),
+        title: Text(
+          strings.settings,
+          style: AppTextStyles.heading.copyWith(
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(strings.settingsDescription, style: AppTextStyles.body),
+          Text(
+            strings.settingsDescription,
+            style: AppTextStyles.body.copyWith(
+              color: isDark ? Colors.grey.shade300 : AppColors.textSecondary,
+            ),
+          ),
 
           const SizedBox(height: 20),
 

@@ -26,16 +26,27 @@ class AppColors {
 
 /// Kiểu chữ
 class AppTextStyles {
-  static const heading = TextStyle(fontSize: 22, fontWeight: FontWeight.bold);
+  static const heading = TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
 
   static const subHeading = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
   );
 
-  static const body = TextStyle(fontSize: 15);
+  static const body = TextStyle(
+    fontSize: 15,
+    color: AppColors.textPrimary,
+  );
 
-  static const caption = TextStyle(fontSize: 13);
+  static const caption = TextStyle(
+    fontSize: 13,
+    color: AppColors.textSecondary,
+  );
 }
 
 /// Cấu hình ThemeData áp dụng trực tiếp vào MaterialApp
@@ -48,13 +59,19 @@ class AppTheme {
         seedColor: AppColors.primary,
         primary: AppColors.primary,
         surface: AppColors.surface,
+        onSurface: AppColors.textPrimary,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.heading,
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+        ),
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

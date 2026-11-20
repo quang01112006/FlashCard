@@ -303,6 +303,7 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   Widget _title(String text, AppStrings strings) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final deck = context.read<CardController>().deckById(widget.deckId);
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -311,9 +312,22 @@ class _StudyScreenState extends State<StudyScreen> {
           deck?.name ?? strings.deletedDeck,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white70 : AppColors.textSecondary,
+          ),
         ),
-        Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
