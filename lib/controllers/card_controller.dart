@@ -150,20 +150,44 @@ class CardController extends ChangeNotifier {
   bool get isReminderEnabled => _isReminderEnabled;
   TimeOfDay get reminderTime => _reminderTime;
 
-  Future<void> setReminder({required bool enabled, TimeOfDay? time}) async {
-    _isReminderEnabled = enabled;
-    if (time != null) {
-      _reminderTime = time;
-    }
+
+  Future<bool> setReminder({
+    required bool enabled,
+    TimeOfDay? time,
+    required String title,
+    required String body,
+    required String channelName,
+    required String channelDescription,
+  }) async {
     if (enabled) {
-      await NotificationService.scheduleDailyReminder(
-        selectedTime: _reminderTime,
+      final nextTime = time ?? _reminderTime;
+
+      final success = await NotificationService.scheduleDailyReminder(
+        selectedTime: nextTime,
+        title: title,
+        body: body,
+        channelName: channelName,
+        channelDescription: channelDescription,
       );
-    } else {
-      await NotificationService.cancelReminder();
+
+      // Chỉ cập nhật trạng thái khi đặt lịch thành công.
+      if (!success) return false;
+
+      _reminderTime = nextTime;
+      _isReminderEnabled = true;
+      _notify();
+      return true;
     }
+
+    final success = await NotificationService.cancelReminder();
+
+    if (!success) return false;
+
+    _isReminderEnabled = false;
     _notify();
+    return true;
   }
+
 
   /// Khôi phục toàn bộ dữ liệu thẻ về trạng thái 300 câu hỏi gốc ban đầu
   Future<void> resetAllCards() async {

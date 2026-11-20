@@ -308,7 +308,7 @@ class _StudyScreenState extends State<StudyScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          deck?.name ?? strings.deletedDeck,
+          strings.deckName(deck?.name ?? strings.deletedDeck),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 14),

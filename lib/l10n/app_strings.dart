@@ -217,6 +217,17 @@ class AppStrings {
     }
     return level;
   }
+  String deckName(String name) {
+    if (!isEnglish) return name;
+
+    final normalized = name.trim().toLowerCase();
+
+    if (normalized == 'học flutter' || normalized == 'hoc flutter') {
+      return 'Learn Flutter';
+    }
+
+    return name;
+  }
 
   // Common states
   String get comingSoon => isEnglish ? 'Coming soon' : 'Sẽ được cập nhật';

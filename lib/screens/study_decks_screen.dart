@@ -122,7 +122,7 @@ class _StudyDecksScreenState extends State<StudyDecksScreen> {
                   DropdownMenuItem(
                     value: deck.id,
                     child: Text(
-                      deck.name,
+                      strings.deckName(deck.name),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

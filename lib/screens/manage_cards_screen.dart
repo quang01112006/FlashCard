@@ -295,10 +295,12 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         title: Text(
           widget.deckId == null
               ? (isEnglish ? 'Decks' : 'Bộ thẻ')
-              : controller.deckById(widget.deckId!)?.name ??
-                    (isEnglish
-                        ? 'Deck no longer exists'
-                        : 'Bộ thẻ không còn tồn tại'),
+              : strings.deckName(
+                  controller.deckById(widget.deckId!)?.name ??
+                      (isEnglish
+                          ? 'Deck no longer exists'
+                          : 'Bộ thẻ không còn tồn tại'),
+                ),
         ),
         actions: [
           if (widget.deckId != null &&
