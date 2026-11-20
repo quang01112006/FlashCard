@@ -4,7 +4,7 @@ class AppStrings {
   const AppStrings(this.isEnglish);
 
   // General
-  String get appName => 'FlashCard SM-2';
+  String get appName => 'Memora';
   String get settings => isEnglish ? 'Settings' : 'Cài đặt';
   String get cancel => isEnglish ? 'Cancel' : 'Hủy';
   String get save => isEnglish ? 'Save' : 'Lưu';
@@ -67,8 +67,8 @@ class AppStrings {
       isEnglish ? 'Daily study reminder' : 'Nhắc nhở học tập';
 
   String get reminderChannelDescription => isEnglish
-      ? 'Daily reminder to review your Flashcard SM-2 cards'
-      : 'Thông báo nhắc nhở ôn tập thẻ Flashcard SM-2 hằng ngày';
+      ? 'Daily reminder to review your Memora cards'
+      : 'Thông báo nhắc nhở ôn tập thẻ Memora hằng ngày';
 
   // Reset data
   String get resetData =>

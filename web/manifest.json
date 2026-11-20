@@ -1,6 +1,6 @@
 {
-    "name": "flashcard_sm2",
-    "short_name": "flashcard_sm2",
+    "name": "Memora - Flashcard Spaced Repetition",
+    "short_name": "Memora",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
