@@ -92,7 +92,7 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(strings.settings, style: AppTextStyles.heading),
+        title: Text(strings.settings),
         centerTitle: true,
       ),
       body: ListView(
@@ -184,10 +184,10 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 SwitchListTile(
                   secondary: Icon(
-                    Icons.notifications_active_outlined,
-                    color: controller.isReminderEnabled
-                        ? primaryColor
-                        : AppColors.textSecondary,
+                    controller.isReminderEnabled
+                        ? Icons.notifications_active_outlined
+                        : Icons.notifications_outlined,
+                    color: primaryColor,
                   ),
                   title: Text(strings.dailyReminder, style: AppTextStyles.body),
                   subtitle: Text(
