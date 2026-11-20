@@ -567,7 +567,7 @@ class _StudyScreenState extends State<StudyScreen> {
                           card: currentCard,
                           isBack: false,
                           tag: strings.cardTagQuestion,
-                          tagColor: AppColors.primary,
+                          tagColor: isDark ? const Color(0xFF818CF8) : AppColors.primary,
                           content: _getCardFront(currentCard, isEnglish),
                           hint: strings.tapCardToFlipHint,
                           backgroundColor: frontBgColor,
@@ -787,7 +787,9 @@ class _StudyScreenState extends State<StudyScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
+          builder: (context, constraints) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return SingleChildScrollView(
             key: PageStorageKey(
               'study_content_${card.id}_${isBack ? 'back' : 'front'}',
             ),
@@ -811,23 +813,29 @@ class _StudyScreenState extends State<StudyScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryLight.withOpacity(0.7),
+                            color: isDark
+                                ? const Color(0xFF312E81).withOpacity(0.5)
+                                : AppColors.primaryLight.withOpacity(0.7),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text.rich(
                             TextSpan(
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
+                                color: isDark
+                                    ? Colors.grey.shade300
+                                    : AppColors.textSecondary,
                               ),
                               children: [
                                 if (card.topicCode.isNotEmpty)
                                   TextSpan(
                                     text: card.topicCode,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
+                                      color: isDark
+                                          ? const Color(0xFFA5B4FC)
+                                          : AppColors.primary,
                                     ),
                                   ),
                                 if (card.topicCode.isNotEmpty &&
@@ -897,9 +905,10 @@ class _StudyScreenState extends State<StudyScreen> {
                 ],
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
-    );
-  }
+    ),
+  );
+}
 }
