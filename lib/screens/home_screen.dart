@@ -49,14 +49,6 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
-  /// Tính chuỗi ngày học streak từ các thẻ đã được ôn tập
-  int _calculateStreak(List<Flashcard> cards) {
-    final reviewedCount = cards.where((c) => c.repetitions > 0).length;
-    if (reviewedCount == 0) return 0;
-    // Nếu có thẻ đã học, tính chuỗi ngày học tối thiểu là 1, tăng dần theo số lượng thẻ đã học
-    return math.max(1, (reviewedCount / 10).ceil().clamp(1, 30));
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -69,7 +61,7 @@ class HomeScreen extends StatelessWidget {
     final reviewCards = totalCards.where((c) => c.repetitions > 0 && c.isDueToday).toList();
     final studiedCards = totalCards.where((c) => c.repetitions > 0).toList();
 
-    final streak = _calculateStreak(totalCards);
+    final streak = controller.streak;
 
     return Scaffold(
       appBar: AppBar(
