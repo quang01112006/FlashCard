@@ -16,15 +16,17 @@ class NotificationService {
       tz.initializeTimeZones();
       try {
         final offset = DateTime.now().timeZoneOffset;
-        final matchingLocation = tz.timeZoneDatabase.locations.values.firstWhere(
-          (loc) => loc.currentTimeZone.offset == offset,
-          orElse: () => tz.getLocation('Asia/Ho_Chi_Minh'),
-        );
+        final matchingLocation = tz.timeZoneDatabase.locations.values
+            .firstWhere(
+              (loc) => loc.currentTimeZone.offset == offset,
+              orElse: () => tz.getLocation('Asia/Ho_Chi_Minh'),
+            );
         tz.setLocalLocation(matchingLocation);
       } catch (_) {}
 
-      const androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const iosSettings = DarwinInitializationSettings();
       const initSettings = InitializationSettings(
         android: androidSettings,
@@ -42,8 +44,10 @@ class NotificationService {
   static Future<bool> requestPermission() async {
     try {
       await initialize();
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (android != null) {
         final granted = await android.requestNotificationsPermission();
         try {
@@ -84,7 +88,8 @@ class NotificationService {
       const androidDetails = AndroidNotificationDetails(
         'daily_study_reminder',
         'Nhắc nhở học tập',
-        channelDescription: 'Thông báo nhắc nhở ôn tập thẻ Flashcard SM-2 hằng ngày',
+        channelDescription:
+            'Thông báo nhắc nhở ôn tập thẻ Flashcard SM-2 hằng ngày',
         importance: Importance.max,
         priority: Priority.high,
         showWhen: true,
