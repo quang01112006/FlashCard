@@ -41,41 +41,53 @@ class NotificationService {
   }
 
   /// Yêu cầu quyền thông báo trên Android 13+
+
+  /// Yêu cầu và kiểm tra quyền thông báo trên Android.
+
   static Future<bool> requestPermission() async {
     try {
       await initialize();
+
+      if (!_initialized) return false;
+
       final android = _plugin
           .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      if (android != null) {
-        final granted = await android.requestNotificationsPermission();
-        try {
-          await android.requestExactAlarmsPermission();
-        } catch (_) {}
-        return granted ?? false;
-      }
-      return true;
+          AndroidFlutterLocalNotificationsPlugin>();
+
+      if (android == null) return false;
+
+      // Yêu cầu quyền trên Android 13 trở lên.
+      await android.requestNotificationsPermission();
+
+      // Kiểm tra trạng thái quyền thực tế sau khi yêu cầu.
+      final enabled = await android.areNotificationsEnabled();
+
+      return enabled ?? false;
     } catch (e) {
       debugPrint('Notification permission error: $e');
-      return true;
+      return false;
     }
   }
 
-  /// Lên lịch nhắc nhở ôn tập hằng ngày vào đúng mốc giờ đã chọn
-  static Future<void> scheduleDailyReminder({
+
+  /// Lên lịch nhắc nhở ôn tập hằng ngày.
+  /// Trả về true nếu đặt lịch thành công, false nếu thất bại.
+  static Future<bool> scheduleDailyReminder({
     required TimeOfDay selectedTime,
-    String title = 'Flashcard SM-2',
-    String body = 'Đã đến giờ ôn tập thẻ hôm nay rồi! Hãy dành 5 phút nhé.',
+    required String title,
+    required String body,
+    required String channelName,
+    required String channelDescription,
   }) async {
     try {
       await initialize();
-      await cancelReminder();
+      if (!_initialized) return false;
 
       final scheduledDateTime = calculateNextReminder(
         now: DateTime.now(),
         selectedTime: selectedTime,
       );
+
       final tzScheduledDate = tz.TZDateTime(
         tz.local,
         scheduledDateTime.year,
@@ -85,16 +97,19 @@ class NotificationService {
         scheduledDateTime.minute,
       );
 
-      const androidDetails = AndroidNotificationDetails(
-        'daily_study_reminder',
-        'Nhắc nhở học tập',
-        channelDescription:
-            'Thông báo nhắc nhở ôn tập thẻ Flashcard SM-2 hằng ngày',
+      final androidDetails = AndroidNotificationDetails(
+        'daily_study_reminder_v2',
+        channelName,
+        channelDescription: channelDescription,
         importance: Importance.max,
         priority: Priority.high,
         showWhen: true,
       );
-      const details = NotificationDetails(android: androidDetails);
+
+      final details = NotificationDetails(android: androidDetails);
+
+      // Thử hủy lịch cũ trước khi đặt lịch mới.
+      await _plugin.cancel(id: 0);
 
       try {
         await _plugin.zonedSchedule(
@@ -108,6 +123,7 @@ class NotificationService {
         );
       } catch (e) {
         debugPrint('Exact alarm failed, fallback to inexact: $e');
+
         await _plugin.zonedSchedule(
           id: 0,
           title: title,
@@ -118,18 +134,25 @@ class NotificationService {
           matchDateTimeComponents: DateTimeComponents.time,
         );
       }
+
+      return true;
     } catch (e) {
       debugPrint('Schedule reminder error: $e');
+      return false;
     }
   }
 
-  /// Hủy thông báo nhắc nhở
-  static Future<void> cancelReminder() async {
+  /// Hủy thông báo nhắc nhở.
+  static Future<bool> cancelReminder() async {
     try {
       await initialize();
+      if (!_initialized) return false;
+
       await _plugin.cancel(id: 0);
+      return true;
     } catch (e) {
       debugPrint('Cancel reminder error: $e');
+      return false;
     }
   }
 

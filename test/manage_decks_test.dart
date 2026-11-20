@@ -32,6 +32,34 @@ class _FailingStore extends HiveManageCardStore {
   }
 }
 
+class _MemoryStore implements ManageCardStore, ManageDeckStore {
+  DeckCollection? collection;
+
+  @override
+  Future<List<Flashcard>?> read() async {
+    return collection?.cards;
+  }
+
+  @override
+  Future<void> write(List<Flashcard> cards) async {
+    collection = DeckCollection(
+      decks: collection?.decks ??
+          [const CardDeck(id: CardDeck.flutterId, name: 'Học Flutter')],
+      cards: cards,
+    );
+  }
+
+  @override
+  Future<DeckCollection?> readCollection() async {
+    return collection;
+  }
+
+  @override
+  Future<void> writeCollection(DeckCollection value) async {
+    collection = value;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory dir;
@@ -187,46 +215,62 @@ void main() {
   });
 
   testWidgets('Danh sách bộ, tạo bộ rỗng, mở và quay lại không trộn câu hỏi', (
-    tester,
-  ) async {
-    await tester.runAsync(
-      () => store().writeCollection(
-        DeckCollection(
-          decks: [const CardDeck(id: CardDeck.flutterId, name: 'Học Flutter')],
-          cards: [card('x')],
-        ),
+      tester,
+      ) async {
+    final memoryStore = _MemoryStore();
+
+    await memoryStore.writeCollection(
+      DeckCollection(
+        decks: [
+          const CardDeck(
+            id: CardDeck.flutterId,
+            name: 'Học Flutter',
+          ),
+        ],
+        cards: [card('x')],
       ),
     );
-    final controller = CardController(store: store());
-    await tester.runAsync(controller.loadDefaultCards);
+
+    final controller = CardController(store: memoryStore);
+    await controller.loadDefaultCards();
     addTearDown(controller.dispose);
+
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: controller,
         child: const MaterialApp(home: MainNavScreen()),
       ),
     );
+
     await tester.tap(find.text('Bộ thẻ'));
     await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const ValueKey('manage_create_deck')));
     await tester.pumpAndSettle();
+
     await tester.enterText(
       find.byKey(const ValueKey('manage_deck_name')),
       'Nấu ăn',
     );
-    await tester.runAsync(() async {
-      await tester.tap(find.text('Tạo bộ mới'));
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
+
+    await tester.tap(find.text('Tạo bộ mới'));
     await tester.pumpAndSettle();
+
+    expect(controller.isSaving, isFalse);
+    expect(find.byKey(const ValueKey('manage_deck_name')), findsNothing);
+
     await tester.tap(find.text('Nấu ăn'));
     await tester.pumpAndSettle();
+
     expect(find.text('Chưa có thẻ nào'), findsOneWidget);
     expect(find.text('Question x'), findsNothing);
+
     await tester.pageBack();
     await tester.pumpAndSettle();
+
     await tester.tap(find.text('Học Flutter'));
     await tester.pumpAndSettle();
+
     expect(find.text('Question x'), findsOneWidget);
   });
 }

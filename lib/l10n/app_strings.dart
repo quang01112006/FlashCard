@@ -205,7 +205,16 @@ class AppStrings {
   String get retry => isEnglish ? 'Retry' : 'Thử lại';
   String levelLabel(String level) {
     if (!isEnglish) return level;
-    final lower = level.toLowerCase();
+    final lower = level.trim().toLowerCase();
+    if (lower == 'học' || lower == 'hoc') {
+      return 'Learn';
+    }
+    if (lower == 'nhớ' || lower == 'nho') {
+      return 'Remember';
+    }
+    if (lower == 'hiểu' || lower == 'hieu') {
+      return 'Understand';
+    }
     if (lower.contains('nhận biết') || lower.contains('nhan biet')) {
       return 'Remember';
     }
@@ -228,6 +237,17 @@ class AppStrings {
       return 'Create';
     }
     return level;
+  }
+  String deckName(String name) {
+    if (!isEnglish) return name;
+
+    final normalized = name.trim().toLowerCase();
+
+    if (normalized == 'học flutter' || normalized == 'hoc flutter') {
+      return 'Learn Flutter';
+    }
+
+    return name;
   }
 
   // Common states

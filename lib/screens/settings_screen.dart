@@ -20,7 +20,14 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (picked != null) {
-      await controller.setReminder(enabled: true, time: picked);
+      await controller.setReminder(
+        enabled: true,
+        time: picked,
+        title: strings.reminderNotificationTitle,
+        body: strings.reminderNotificationBody,
+        channelName: strings.reminderChannelName,
+        channelDescription: strings.reminderChannelDescription,
+      );
       if (context.mounted) {
         final formattedTime =
             '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
@@ -191,7 +198,13 @@ class SettingsScreen extends StatelessWidget {
                     if (enabled) {
                       await NotificationService.requestPermission();
                     }
-                    await controller.setReminder(enabled: enabled);
+                    await controller.setReminder(
+                      enabled: enabled,
+                      title: strings.reminderNotificationTitle,
+                      body: strings.reminderNotificationBody,
+                      channelName: strings.reminderChannelName,
+                      channelDescription: strings.reminderChannelDescription,
+                    );
                     if (context.mounted) {
                       final timeStr =
                           '${controller.reminderTime.hour.toString().padLeft(2, '0')}:${controller.reminderTime.minute.toString().padLeft(2, '0')}';
