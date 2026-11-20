@@ -69,7 +69,9 @@ class _MainNavScreenState extends State<MainNavScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
+        selectedItemColor: controller.isDarkMode
+            ? AppColors.primaryDark
+            : AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
         items: [
           BottomNavigationBarItem(
