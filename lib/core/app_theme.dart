@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Bảng màu chuẩn dùng chung cho toàn bộ dự án
 class AppColors {
-  static const primary = Color(0xFF4F46E5); // Tím chàm
-  static const primaryLight = Color(0xFFEEF2FF); // tím chàm nhạt
+  static const primary = Color(0xFF4F46E5); // Tím chàm (Light Mode)
+  static const primaryDark = Color(0xFF818CF8); // Tím sáng Indigo 400 (Dark Mode tương phản cao)
+  static const primaryLight = Color(0xFFEEF2FF); // Tím chàm nhạt
+  static const primaryLightDark = Color(0xFF312E81); // Tím chàm nền tối
   static const secondary = Color(0xFF10B981); // Xanh ngọc (nút Dễ / Hoàn thành)
   static const warning = Color(0xFFF59E0B); // Vàng cam (nút Khó)
   static const danger = Color(0xFFEF4444); // Đỏ (nút Học lại)
@@ -13,28 +15,27 @@ class AppColors {
   static const textPrimary = Color(0xFF1E293B);
   static const textSecondary = Color(0xFF64748B);
   static const border = Color(0xFFE2E8F0);
+
+  /// Trả về màu primary thích ứng theo Light / Dark Mode
+  static Color primaryAdaptive(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? primaryDark
+        : primary;
+  }
 }
 
 /// Kiểu chữ
 class AppTextStyles {
-  static const heading = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
-  );
+  static const heading = TextStyle(fontSize: 22, fontWeight: FontWeight.bold);
 
   static const subHeading = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
   );
 
-  static const body = TextStyle(fontSize: 15, color: AppColors.textPrimary);
+  static const body = TextStyle(fontSize: 15);
 
-  static const caption = TextStyle(
-    fontSize: 13,
-    color: AppColors.textSecondary,
-  );
+  static const caption = TextStyle(fontSize: 13);
 }
 
 /// Cấu hình ThemeData áp dụng trực tiếp vào MaterialApp
@@ -83,7 +84,7 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.dark,
-        primary: AppColors.primary,
+        primary: AppColors.primaryDark,
         surface: const Color(0xFF1E293B),
       ),
       appBarTheme: const AppBarTheme(
