@@ -77,8 +77,11 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final controller = context.watch<CardController>();
     final strings = AppStrings(controller.isEnglish);
+    final primaryColor = isDark ? AppColors.primaryDark : AppColors.primary;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,11 +96,11 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // LANGUAGE
-          _buildSectionTitle(strings.language, Icons.language),
+          _buildSectionTitle(strings.language, Icons.language, primaryColor),
 
           Card(
             child: ListTile(
-              leading: const Icon(Icons.translate, color: AppColors.primary),
+              leading: Icon(Icons.translate, color: primaryColor),
               title: Text(strings.language, style: AppTextStyles.body),
               subtitle: Text(
                 strings.languageDescription,
@@ -139,13 +142,13 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // APPEARANCE
-          _buildSectionTitle(strings.appearance, Icons.palette_outlined),
+          _buildSectionTitle(strings.appearance, Icons.palette_outlined, primaryColor),
 
           Card(
             child: SwitchListTile(
-              secondary: const Icon(
+              secondary: Icon(
                 Icons.dark_mode_outlined,
-                color: AppColors.primary,
+                color: primaryColor,
               ),
               title: Text(strings.darkMode, style: AppTextStyles.body),
               subtitle: Text(
@@ -153,7 +156,7 @@ class SettingsScreen extends StatelessWidget {
                 style: AppTextStyles.caption,
               ),
               value: controller.isDarkMode,
-              activeTrackColor: AppColors.primary,
+              activeTrackColor: primaryColor,
               onChanged: (value) {
                 context.read<CardController>().setDarkMode(value);
               },
@@ -166,6 +169,7 @@ class SettingsScreen extends StatelessWidget {
           _buildSectionTitle(
             strings.notification,
             Icons.notifications_outlined,
+            primaryColor,
           ),
 
           Card(
@@ -175,7 +179,7 @@ class SettingsScreen extends StatelessWidget {
                   secondary: Icon(
                     Icons.notifications_active_outlined,
                     color: controller.isReminderEnabled
-                        ? AppColors.primary
+                        ? primaryColor
                         : AppColors.textSecondary,
                   ),
                   title: Text(strings.dailyReminder, style: AppTextStyles.body),
@@ -186,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
                     style: AppTextStyles.caption,
                   ),
                   value: controller.isReminderEnabled,
-                  activeTrackColor: AppColors.primary,
+                  activeTrackColor: primaryColor,
                   onChanged: (enabled) async {
                     if (enabled) {
                       await NotificationService.requestPermission();
@@ -212,9 +216,9 @@ class SettingsScreen extends StatelessWidget {
                 if (controller.isReminderEnabled) ...[
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.schedule,
-                      color: AppColors.primary,
+                      color: primaryColor,
                     ),
                     title: Text(
                       strings.reminderTime,
@@ -227,7 +231,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: Text(
                       '${controller.reminderTime.hour.toString().padLeft(2, '0')}:${controller.reminderTime.minute.toString().padLeft(2, '0')}',
                       style: AppTextStyles.subHeading.copyWith(
-                        color: AppColors.primary,
+                        color: primaryColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -242,7 +246,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // RESET DATA
-          _buildSectionTitle(strings.resetData, Icons.restore),
+          _buildSectionTitle(strings.resetData, Icons.restore, primaryColor),
 
           Card(
             child: ListTile(
@@ -268,12 +272,12 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title, IconData icon) {
+  Widget _buildSectionTitle(String title, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 20),
+          Icon(icon, color: color, size: 20),
           const SizedBox(width: 8),
           Text(title, style: AppTextStyles.subHeading),
         ],

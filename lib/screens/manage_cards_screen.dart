@@ -580,11 +580,15 @@ class _ManageCardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       shape: highlighted
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.primary, width: 2),
+              side: BorderSide(
+                color: isDark ? AppColors.primaryDark : AppColors.primary,
+                width: 2,
+              ),
             )
           : null,
       clipBehavior: Clip.antiAlias,
