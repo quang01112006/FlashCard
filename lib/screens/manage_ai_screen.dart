@@ -382,12 +382,12 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
                   : _strings.text('Tạo bản nháp'),
             ),
           ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
+          const SizedBox(height: 12),
+          FilledButton.tonalIcon(
             key: const ValueKey('manage_ai_offline_demo'),
             onPressed: busy ? null : _loadDemoCodeDrafts,
             icon: const Icon(Icons.bolt_rounded),
-            label: Text(_strings.text('Demo')),
+            label: Text(_strings.text('Demo AI (Offline)')),
           ),
         ],
       ),
