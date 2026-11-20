@@ -218,7 +218,7 @@ class _ManageCreateDeckScreenState extends State<ManageCreateDeckScreen> {
         appBar: AppBar(
           title: Text(
             widget.initialDeck == null
-                ? (isEnglish ? 'Create deck' : 'Đổi tên bộ thẻ')
+                ? (isEnglish ? 'Create deck' : 'Tạo bộ thẻ')
                 : (isEnglish ? 'Rename deck' : 'Đổi tên bộ thẻ'),
           ),
         ),
