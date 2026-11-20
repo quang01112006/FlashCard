@@ -48,7 +48,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          const HomeScreen(),
+          HomeScreen(
+            onNavigateToStudy: () => setState(() => _currentIndex = 1),
+            onStudyDeck: _openStudyDeck,
+            onNavigateToDecks: () => setState(() => _currentIndex = 2),
+          ),
           StudyDecksScreen(
             requestedDeckId: _requestedDeckId,
             requestVersion: _studyRequest,
@@ -65,9 +69,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: controller.isDarkMode
-            ? AppColors.primaryDark
-            : AppColors.primary,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
         items: [
           BottomNavigationBarItem(

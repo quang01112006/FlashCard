@@ -139,6 +139,35 @@ class AppStrings {
   String get newCardBadge => isEnglish ? 'New' : 'Thẻ mới';
   String reviewedBadge(int days) =>
       isEnglish ? 'Reviewed (${days}d)' : 'Đã ôn (${days}d)';
+  String get greetingMorning => isEnglish ? 'Good morning!' : 'Chào buổi sáng!';
+  String get greetingAfternoon =>
+      isEnglish ? 'Good afternoon!' : 'Chào buổi chiều!';
+  String get greetingEvening => isEnglish ? 'Good evening!' : 'Chào buổi tối!';
+  String get greetingSub => isEnglish
+      ? 'Ready to review your flashcards?'
+      : 'Sẵn sàng ôn tập thẻ ghi nhớ hôm nay chưa?';
+  String get streakHint => isEnglish
+      ? 'Study daily to keep your streak!'
+      : 'Học mỗi ngày để duy trì chuỗi nhé!';
+  String streakDays(int days) =>
+      isEnglish ? '$days-day streak' : 'Chuỗi $days ngày';
+  String get statStudied => isEnglish ? 'Studied' : 'Đã học';
+  String get retentionTitle =>
+      isEnglish ? 'Retention Breakdown' : 'Mức độ ghi nhớ';
+  String get retentionSub => isEnglish
+      ? 'Based on SM-2 repetition intervals'
+      : 'Phân loại theo chu kỳ lặp lại SM-2';
+  String get levelNew => isEnglish ? 'New' : 'Mới';
+  String get levelLearning => isEnglish ? 'Learning' : 'Đang học';
+  String get levelRetained => isEnglish ? 'Retained' : 'Đã nhớ';
+  String get levelMastered => isEnglish ? 'Mastered' : 'Thành thạo';
+  String get continueStudying => isEnglish ? 'Continue Studying' : 'Tiếp tục học';
+  String get viewAllDecks => isEnglish ? 'View All' : 'Xem tất cả';
+  String dueInDeckCount(int count) =>
+      isEnglish ? '$count cards due' : 'Cần ôn $count thẻ';
+  String get allCaughtUpInDeck =>
+      isEnglish ? 'All caught up!' : 'Đã ôn xong hết!';
+  String get studyNow => isEnglish ? 'Study Now' : 'Học ngay';
 
   // Study Screen
   String get showAnswer => isEnglish ? 'Show Answer' : 'Hiện đáp án';
@@ -206,7 +235,9 @@ class AppStrings {
   String levelLabel(String level) {
     if (!isEnglish) return level;
     final lower = level.toLowerCase();
-    if (lower.contains('nhớ') || lower.contains('nhận biết') || lower.contains('nhan biet')) {
+    if (lower.contains('nhớ') ||
+        lower.contains('nhận biết') ||
+        lower.contains('nhan biet')) {
       return 'Remember';
     }
     if (lower.contains('hiểu') || lower.contains('hieu')) {
@@ -217,6 +248,7 @@ class AppStrings {
     }
     return level;
   }
+
   String deckName(String name) {
     if (!isEnglish) return name;
 
