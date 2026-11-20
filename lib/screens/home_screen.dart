@@ -68,7 +68,6 @@ class HomeScreen extends StatelessWidget {
     final newCards = totalCards.where((c) => c.repetitions == 0).toList();
     final reviewCards = totalCards.where((c) => c.repetitions > 0 && c.isDueToday).toList();
     final studiedCards = totalCards.where((c) => c.repetitions > 0).toList();
-    final masteredCards = totalCards.where((c) => c.repetitions >= 3 && c.interval >= 6).toList();
 
     final streak = _calculateStreak(totalCards);
 
