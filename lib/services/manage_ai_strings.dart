@@ -73,6 +73,7 @@ class ManageAiStrings {
         'The AI service address has not been configured.',
     'Đã đạt giới hạn yêu cầu. Vui lòng chờ rồi thử lại.':
         'Request limit reached. Please wait and try again.',
+    'Dịch vụ AI chưa thể tạo thẻ lúc này. Vui lòng thử lại sau.': 'The AI service cannot generate cards right now. Please try again later.',
     'Gemini đang tạm thời quá tải hoặc không khả dụng. Hãy chờ một lúc rồi thử lại.':
         'Gemini is temporarily busy or unavailable. Please wait and try again.',
     'Khu vực máy chủ AI hiện chưa được Gemini hỗ trợ. Cần kiểm tra vị trí dịch vụ.': 'Gemini does not support the current server region. Check the service location.',
