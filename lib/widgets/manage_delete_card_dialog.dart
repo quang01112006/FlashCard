@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/card_controller.dart';
 import '../core/app_theme.dart';
+import '../l10n/app_strings.dart';
 import '../models/flashcard.dart';
 import '../services/manage_card_store.dart';
 import 'code_text_view.dart';

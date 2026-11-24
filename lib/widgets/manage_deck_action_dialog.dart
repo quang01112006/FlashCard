@@ -5,6 +5,7 @@ import 'manage_select_field.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/card_controller.dart';
+import '../l10n/app_strings.dart';
 import '../models/card_deck.dart';
 import '../models/flashcard.dart';
 import '../services/manage_card_store.dart';
