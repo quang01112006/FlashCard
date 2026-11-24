@@ -170,10 +170,11 @@ class _StudyScreenState extends State<StudyScreen> {
         _isRefreshing ||
         controller.isLoading ||
         controller.isSaving;
+    final isEnglish = controller.isEnglish;
     return [
       IconButton(
         key: const ValueKey('study_refresh'),
-        tooltip: 'Tải lại phiên học',
+        tooltip: isEnglish ? 'Reload study session' : 'Tải lại phiên học',
         icon: _isRefreshing
             ? const SizedBox(
                 width: 20,
@@ -186,7 +187,7 @@ class _StudyScreenState extends State<StudyScreen> {
       if (_sessionCards.isNotEmpty)
         IconButton(
           icon: const Icon(Icons.undo),
-          tooltip: 'Hoàn tác câu vừa đánh giá',
+          tooltip: isEnglish ? 'Undo last rated card' : 'Hoàn tác câu vừa đánh giá',
           onPressed: busy || _lastRatedCard == null ? null : _undoLastRating,
         ),
     ];
@@ -291,12 +292,13 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   void _showSaveError(Object error) {
+    final strings = AppStrings(context.read<CardController>().isEnglish);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           error is CardOperationException
               ? error.message
-              : 'Không thể lưu kết quả ôn tập. Vui lòng thử lại.',
+              : strings.saveStudyResultFailed,
         ),
       ),
     );

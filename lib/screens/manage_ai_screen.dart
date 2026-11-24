@@ -81,8 +81,8 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
       if (mounted) {
         setState(
           () => _error = error is AiCardException
-              ? error.message
-              : 'Không thể tạo bản nháp. Vui lòng thử lại.',
+              ? _strings.error(error.message)
+              : _strings.error('Không thể tạo bản nháp. Vui lòng thử lại.'),
         );
       }
     } finally {
@@ -169,7 +169,7 @@ class _ManageAiScreenState extends State<ManageAiScreen> {
           _saving = false;
           _error = error is CardOperationException
               ? error.message
-              : 'Không thể lưu thẻ. Vui lòng thử lại.';
+              : _strings.error('Không thể lưu thẻ. Vui lòng thử lại.');
         });
       }
     }

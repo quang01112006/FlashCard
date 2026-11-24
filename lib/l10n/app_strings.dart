@@ -258,6 +258,10 @@ class AppStrings {
       return 'Learn Flutter';
     }
 
+    if (normalized == 'thẻ đã thêm' || normalized == 'the da them') {
+      return 'Added Cards';
+    }
+
     return name;
   }
 
@@ -267,4 +271,52 @@ class AppStrings {
   String get settingsDescription => isEnglish
       ? 'Customize your flashcard learning experience.'
       : 'Tùy chỉnh trải nghiệm học Flashcard của bạn.';
+
+  // Card management SnackBars
+  String get cardMovedToOtherDeck => isEnglish
+      ? 'Card moved to another deck.'
+      : 'Đã chuyển thẻ sang bộ khác.';
+  String get newCardAdded => isEnglish ? 'New card added.' : 'Đã thêm thẻ mới.';
+  String get cardChangesSaved =>
+      isEnglish ? 'Changes saved.' : 'Đã lưu thay đổi.';
+  String get cardDeleted => isEnglish ? 'Card deleted.' : 'Đã xóa thẻ.';
+  String cardsImportedCount(int count) =>
+      isEnglish ? 'Imported $count cards.' : 'Đã nhập $count thẻ.';
+  String get saveStudyResultFailed => isEnglish
+      ? 'Could not save review result. Please try again.'
+      : 'Không thể lưu kết quả ôn tập. Vui lòng thử lại.';
+
+  String errorMessage(String msg) {
+    if (!isEnglish) return msg;
+    const map = {
+      'Vui lòng chọn bộ nhận.': 'Please select a destination deck.',
+      'Không thể lưu thay đổi. Vui lòng thử lại.':
+          'Could not save changes. Please try again.',
+      'Không thể xóa thẻ. Vui lòng thử lại.':
+          'Could not delete card. Please try again.',
+      'Vui lòng nhập đầy đủ câu hỏi và đáp án.':
+          'Please enter both question and answer.',
+      'Vui lòng chọn mức độ hợp lệ.':
+          'Please select a valid difficulty level.',
+      'Vui lòng nhập tên bộ thẻ.': 'Please enter deck name.',
+      'Tên bộ thẻ đã tồn tại.': 'Deck name already exists.',
+      'Bộ thẻ không còn tồn tại.': 'This deck no longer exists.',
+      'Bộ thẻ không còn tồn tại': 'This deck no longer exists',
+      'Bộ nhận không còn tồn tại.': 'Destination deck no longer exists.',
+      'Thẻ không còn tồn tại. Vui lòng tải lại danh sách.':
+          'Card no longer exists. Please refresh the list.',
+      'Mã thẻ bị trùng. Vui lòng thử lại.':
+          'Duplicate card ID. Please try again.',
+      'Không thể tạo bộ thẻ.': 'Could not create deck.',
+      'Không thể lưu thẻ. Vui lòng thử lại.':
+          'Could not save card. Please try again.',
+      'Không thể tải bộ thẻ. Vui lòng thử lại.':
+          'Could not load deck. Please try again.',
+      'Không có thẻ hợp lệ để nhập.': 'No valid cards to import.',
+      'Thẻ đã được chuyển sang bộ khác. Vui lòng quay lại danh sách.':
+          'Card has been moved to another deck. Please return to list.',
+      'Vui lòng nhập chủ đề.': 'Please enter a topic.',
+    };
+    return map[msg] ?? msg;
+  }
 }

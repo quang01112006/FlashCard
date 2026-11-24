@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../controllers/card_controller.dart';
 import '../services/manage_card_filter.dart';
 
 /// Giữ mã K01–K20 cũ, cho nhập trực tiếp tên/mã chủ đề mới.
@@ -48,9 +50,11 @@ class ManageTopicField extends StatelessWidget {
         border: const OutlineInputBorder(),
       ),
       onChanged: (text) => onChanged(text.trim()),
-      validator: (text) => required && (text == null || text.trim().isEmpty)
-          ? 'Vui lòng nhập chủ đề.'
-          : null,
+      validator: (text) {
+        if (!required || (text != null && text.trim().isNotEmpty)) return null;
+        final isEn = context.read<CardController?>()?.isEnglish ?? false;
+        return isEn ? 'Please enter a topic.' : 'Vui lòng nhập chủ đề.';
+      },
     ),
   );
 }

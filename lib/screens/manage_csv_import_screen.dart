@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/manage_csv_strings.dart';
 import '../widgets/manage_select_field.dart';
 import '../widgets/manage_motion.dart';
 
@@ -23,6 +24,7 @@ class ManageCsvImportScreen extends StatefulWidget {
     this.topicCode,
     this.level,
     this.deckId,
+    this.isEnglish = false,
   });
 
   final String fileName;
@@ -30,6 +32,7 @@ class ManageCsvImportScreen extends StatefulWidget {
   final String? topicCode;
   final String? level;
   final String? deckId;
+  final bool isEnglish;
 
   @override
   State<ManageCsvImportScreen> createState() => _ManageCsvImportScreenState();
@@ -39,6 +42,11 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
   static final _codeBlocks = RegExp(r'```[\s\S]*?```');
   static final _inlineCode = RegExp(r'`([^`]+)`');
   static final _whitespace = RegExp(r'\s+');
+
+  bool get _isEnglish =>
+      widget.isEnglish ||
+      (mounted ? (context.read<CardController?>()?.isEnglish ?? false) : false);
+
   late String _topic =
       widget.topicCode ??
       (widget.deckId == null || widget.deckId == 'flutter-default'
@@ -77,11 +85,12 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
       });
     } catch (error) {
       if (!mounted) return;
+      final csvStrings = ManageCsvStrings(_isEnglish);
       setState(() {
         _saving = false;
         _error = error is CardOperationException
             ? error.message
-            : 'Không thể nhập thẻ. Vui lòng thử lại.';
+            : csvStrings.importFailed;
       });
     }
   }
@@ -126,11 +135,13 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
       blankRows: widget.result.blankRows,
     );
     final controller = context.watch<CardController>();
+    final isEnglish = controller.isEnglish || widget.isEnglish;
+    final csvStrings = ManageCsvStrings(isEnglish);
     final busy = _saving || controller.isSaving;
     return PopScope<int>(
       canPop: _allowPop || !_saving,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Xem trước CSV')),
+        appBar: AppBar(title: Text(csvStrings.importPreviewTitle)),
         body: SafeArea(
           child: CustomScrollView(
             slivers: [
@@ -150,21 +161,18 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                         runSpacing: 8,
                         children: [
                           Chip(
-                            label: Text('${result.cards.length} thẻ hợp lệ'),
+                            label: Text(csvStrings.validCardsCount(result.cards.length)),
                           ),
-                          Chip(label: Text('${result.errors.length} dòng lỗi')),
+                          Chip(label: Text(csvStrings.errorRowsCount(result.errors.length))),
                           if (result.blankRows > 0)
-                            Chip(label: Text('${result.blankRows} dòng trống')),
+                            Chip(label: Text(csvStrings.blankRowsCount(result.blankRows))),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Chỉ các thẻ hợp lệ được thêm vào bộ hiện có, với tiến độ ôn mới. '
-                        'Nhập lại cùng file sẽ tạo thêm bản sao.',
-                      ),
+                      Text(csvStrings.importNote),
                       if (result.needsTopic || result.needsLevel) ...[
                         const SizedBox(height: 16),
-                        const Text('Bổ sung cho các ô còn thiếu trong file:'),
+                        Text(csvStrings.missingDefaultsPrompt),
                         const SizedBox(height: 12),
                         if (result.needsTopic)
                           ManageTopicField(
@@ -180,7 +188,7 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                                 widget.deckId == null ||
                                 widget.deckId == 'flutter-default',
                             enabled: !busy,
-                            label: 'Chủ đề mặc định',
+                            label: csvStrings.defaultTopic,
                             onChanged: (value) =>
                                 setState(() => _topic = value),
                           ),
@@ -191,9 +199,9 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                           ManageSelectField<String>(
                             key: const ValueKey('manage_csv_level'),
                             initialValue: _level,
-                            decoration: const InputDecoration(
-                              labelText: 'Mức độ mặc định',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: csvStrings.defaultLevel,
+                              border: const OutlineInputBorder(),
                             ),
                             items: ManageCardFilter.levels
                                 .map(
@@ -210,20 +218,18 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                       ],
                       if (result.cards.isEmpty) ...[
                         const SizedBox(height: 16),
-                        const Text(
-                          'Không có thẻ hợp lệ để nhập. Hãy kiểm tra file rồi chọn lại.',
-                        ),
+                        Text(csvStrings.noValidCards),
                       ],
                     ],
                   ),
                 ),
               ),
               if (result.errors.isNotEmpty) ...[
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
-                      'Các dòng không được nhập',
+                      csvStrings.unimportedRowsTitle,
                       style: AppTextStyles.subHeading,
                     ),
                   ),
@@ -237,18 +243,18 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                         Icons.error_outline,
                         color: AppColors.danger,
                       ),
-                      title: Text('Dòng ${error.line}'),
+                      title: Text(csvStrings.rowErrorTitle(error.line)),
                       subtitle: Text(error.message),
                     );
                   },
                 ),
               ],
               if (result.cards.isNotEmpty) ...[
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Thẻ sẽ được nhập',
+                      csvStrings.cardsToImportTitle,
                       style: AppTextStyles.subHeading,
                     ),
                   ),
@@ -264,7 +270,7 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                         key: PageStorageKey('manage_csv_preview_$index'),
                         title: Text(
                           card.front
-                              .replaceAll(_codeBlocks, '[Đoạn mã]')
+                              .replaceAll(_codeBlocks, isEnglish ? '[Code block]' : '[Đoạn mã]')
                               .replaceAllMapped(
                                 _inlineCode,
                                 (match) => match.group(1)!,
@@ -275,7 +281,7 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          'Dòng ${card.line} • ${card.topicCode ?? _topic} • ${card.level ?? _level}',
+                          '${csvStrings.rowErrorTitle(card.line)} • ${card.topicCode ?? _topic} • ${card.level ?? _level}',
                         ),
                         expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
                         childrenPadding: const EdgeInsets.all(16),
@@ -284,10 +290,10 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                             key: ValueKey('manage_csv_edit_$index'),
                             onPressed: busy ? null : () => _editDraft(index),
                             icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Chỉnh thẻ trước khi nhập'),
+                            label: Text(isEnglish ? 'Edit card before import' : 'Chỉnh thẻ trước khi nhập'),
                           ),
-                          const Text(
-                            'Câu hỏi',
+                          Text(
+                            isEnglish ? 'Question' : 'Câu hỏi',
                             style: AppTextStyles.subHeading,
                           ),
                           CodeTextView(
@@ -295,15 +301,15 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                             text: card.front,
                           ),
                           const SizedBox(height: 8),
-                          const Text('Đáp án', style: AppTextStyles.subHeading),
+                          Text(isEnglish ? 'Answer' : 'Đáp án', style: AppTextStyles.subHeading),
                           CodeTextView(
                             key: PageStorageKey('manage_csv_back_$index'),
                             text: card.back,
                           ),
                           if (card.frontEn != null) ...[
                             const SizedBox(height: 8),
-                            const Text(
-                              'Câu hỏi tiếng Anh',
+                            Text(
+                              isEnglish ? 'English question' : 'Câu hỏi tiếng Anh',
                               style: AppTextStyles.subHeading,
                             ),
                             CodeTextView(
@@ -313,8 +319,8 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                           ],
                           if (card.backEn != null) ...[
                             const SizedBox(height: 8),
-                            const Text(
-                              'Đáp án tiếng Anh',
+                            Text(
+                              isEnglish ? 'English answer' : 'Đáp án tiếng Anh',
                               style: AppTextStyles.subHeading,
                             ),
                             CodeTextView(
@@ -353,8 +359,10 @@ class _ManageCsvImportScreenState extends State<ManageCsvImportScreen> {
                     child: ManageActionLabel(
                       busy: _saving,
                       label: _saving
-                          ? 'Đang nhập...'
-                          : 'Nhập ${result.cards.length} thẻ hợp lệ',
+                          ? csvStrings.importingButton
+                          : (isEnglish
+                              ? 'Import ${result.cards.length} valid cards'
+                              : 'Nhập ${result.cards.length} thẻ hợp lệ'),
                     ),
                   ),
                 ),
