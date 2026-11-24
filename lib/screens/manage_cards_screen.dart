@@ -9,6 +9,7 @@ import '../models/flashcard.dart';
 import '../services/csv_service.dart';
 import '../services/ai_card_service.dart';
 import '../services/manage_ai_strings.dart';
+import '../services/manage_csv_strings.dart';
 import '../services/manage_csv_files.dart';
 import '../services/manage_card_filter.dart';
 import '../services/manage_card_search.dart';
@@ -67,8 +68,9 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       builder: (_) => ManageDeckActionDialog(deck: deck, card: card),
     );
     if (mounted && moved == true) {
+      final strings = AppStrings(context.read<CardController>().isEnglish);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã chuyển thẻ sang bộ khác.')),
+        SnackBar(content: Text(strings.cardMovedToOtherDeck)),
       );
     }
   }
@@ -147,9 +149,10 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       _recentCardId = id;
     });
     if (_listController.hasClients) _listController.jumpTo(0);
+    final strings = AppStrings(context.read<CardController>().isEnglish);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(card == null ? 'Đã thêm thẻ mới.' : 'Đã lưu thay đổi.'),
+        content: Text(card == null ? strings.newCardAdded : strings.cardChangesSaved),
       ),
     );
   }
@@ -165,8 +168,9 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     );
     if (!mounted || deleted != true) return;
     if (_recentCardId == card.id) setState(() => _recentCardId = null);
+    final strings = AppStrings(context.read<CardController>().isEnglish);
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Đã xóa thẻ.')));
+        .showSnackBar(SnackBar(content: Text(strings.cardDeleted)));
   }
 
   Future<void> _handleCsv(_CsvAction action) async {
@@ -214,35 +218,36 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
               topicCode: _filter.topicCode,
               level: _filter.level,
               deckId: widget.deckId,
+              isEnglish: controller.isEnglish,
             ),
           ),
         );
         if (!mounted || count == null) return;
         _recentCardId = null;
         _resetSearchAndFilters();
+        final csvStrings = ManageCsvStrings(controller.isEnglish);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Đã nhập $count thẻ.')));
+            .showSnackBar(SnackBar(content: Text(csvStrings.cardsImportedCount(count))));
       } else {
         // Xuất toàn bộ bộ thẻ, kể cả khi danh sách đang tìm kiếm hoặc lọc.
         final cards = List<Flashcard>.of(_cards(controller));
         if (cards.isEmpty) return;
+        final csvStrings = ManageCsvStrings(controller.isEnglish);
+        final strings = AppStrings(controller.isEnglish);
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             scrollable: true,
-            title: const Text('Xuất CSV'),
-            content: Text(
-              'Xuất toàn bộ ${cards.length} thẻ, gồm nội dung Việt–Anh, '
-              'khối kiến thức và mức độ. Lịch ôn không được xuất.',
-            ),
+            title: Text(csvStrings.exportDialogTitle),
+            content: Text(csvStrings.exportDialogContent(cards.length)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Hủy'),
+                child: Text(strings.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Chọn nơi lưu'),
+                child: Text(csvStrings.chooseSaveLocation),
               ),
             ],
           ),
@@ -258,19 +263,20 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         );
         if (!mounted || saved == null) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã xuất ${cards.length} thẻ ra file CSV.')),
+          SnackBar(content: Text(csvStrings.exportedCards(cards.length))),
         );
       }
     } catch (error) {
       if (!mounted) return;
+      final csvStrings = ManageCsvStrings(controller.isEnglish);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             error is CsvFileException
-                ? error.message
+                ? csvStrings.csvError(error.message)
                 : action == _CsvAction.import
-                ? 'Không thể đọc file CSV. Vui lòng chọn lại file.'
-                : 'Không thể lưu file CSV. Vui lòng thử lại.',
+                ? csvStrings.cannotReadCsv
+                : csvStrings.cannotSaveCsv,
           ),
         ),
       );
@@ -366,14 +372,14 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
               ],
             ),
           if (_csvProcessing)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  semanticsLabel: 'Đang xử lý CSV',
+                  semanticsLabel: ManageCsvStrings(isEnglish).processingCsv,
                 ),
               ),
             ),
@@ -384,14 +390,20 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   }
 
   Widget _buildBody(CardController controller) {
+    final isEnglish = controller.isEnglish;
     if (controller.isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(semanticsLabel: 'Đang tải bộ thẻ'),
-            SizedBox(height: 16),
-            Text('Đang tải bộ thẻ...', style: AppTextStyles.body),
+            CircularProgressIndicator(
+              semanticsLabel: isEnglish ? 'Loading deck' : 'Đang tải bộ thẻ',
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isEnglish ? 'Loading deck...' : 'Đang tải bộ thẻ...',
+              style: AppTextStyles.body,
+            ),
           ],
         ),
       );
@@ -400,25 +412,31 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     if (controller.loadError != null) {
       return _ManageCardsMessage(
         icon: Icons.error_outline,
-        title: 'Chưa tải được bộ thẻ',
+        title: isEnglish ? 'Could not load deck' : 'Chưa tải được bộ thẻ',
         message: controller.loadError!,
-        actionLabel: 'Thử lại',
+        actionLabel: isEnglish ? 'Retry' : 'Thử lại',
         onAction: () => controller.loadDefaultCards(forceReload: true),
       );
     }
 
     if (widget.deckId != null && controller.deckById(widget.deckId!) == null) {
-      return const Center(
-        child: Text('Bộ thẻ đã được xóa. Hãy quay lại danh sách bộ.'),
+      return Center(
+        child: Text(
+          isEnglish
+              ? 'Deck was deleted. Please return to decks list.'
+              : 'Bộ thẻ đã được xóa. Hãy quay lại danh sách bộ.',
+        ),
       );
     }
     final cards = _cards(controller);
     if (cards.isEmpty) {
       return _ManageCardsMessage(
         icon: Icons.style_outlined,
-        title: 'Chưa có thẻ nào',
-        message: 'Thêm thẻ mới để bắt đầu xây dựng bộ thẻ của bạn.',
-        actionLabel: 'Thêm thẻ mới',
+        title: isEnglish ? 'No cards yet' : 'Chưa có thẻ nào',
+        message: isEnglish
+            ? 'Add a new card to start building your deck.'
+            : 'Thêm thẻ mới để bắt đầu xây dựng bộ thẻ của bạn.',
+        actionLabel: isEnglish ? 'Add new card' : 'Thêm thẻ mới',
         onAction: controller.isSaving || _csvBusy ? () {} : () => _openEditor(),
       );
     }
@@ -524,11 +542,17 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
           child: results.isEmpty
               ? _ManageCardsMessage(
                   icon: Icons.search_off,
-                  title: 'Không tìm thấy thẻ',
-                  message: 'Thử đổi điều kiện hoặc xóa điều kiện để xem toàn bộ thẻ.',
+                  title: isEnglish ? 'No cards found' : 'Không tìm thấy thẻ',
+                  message: isEnglish
+                      ? 'Try changing or clearing filters to see all cards.'
+                      : 'Thử đổi điều kiện hoặc xóa điều kiện để xem toàn bộ thẻ.',
                   actionLabel: _filter.isActive
-                      ? (isSearching ? 'Xóa tìm kiếm và bộ lọc' : 'Xóa bộ lọc')
-                      : 'Xóa tìm kiếm',
+                      ? (isSearching
+                          ? (isEnglish
+                              ? 'Clear search & filters'
+                              : 'Xóa tìm kiếm và bộ lọc')
+                          : (isEnglish ? 'Clear filters' : 'Xóa bộ lọc'))
+                      : (isEnglish ? 'Clear search' : 'Xóa tìm kiếm'),
                   onAction: _resetSearchAndFilters,
                 )
               : ListView.builder(

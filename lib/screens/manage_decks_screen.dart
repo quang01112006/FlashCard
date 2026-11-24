@@ -200,9 +200,10 @@ class _ManageCreateDeckScreenState extends State<ManageCreateDeckScreen> {
       if (mounted) {
         setState(() {
           _saving = false;
+          final isEn = context.read<CardController>().isEnglish;
           _error = error is CardOperationException
-              ? error.message
-              : 'Không thể tạo bộ thẻ.';
+              ? AppStrings(isEn).errorMessage(error.message)
+              : (isEn ? 'Could not create deck.' : 'Không thể tạo bộ thẻ.');
         });
       }
     }

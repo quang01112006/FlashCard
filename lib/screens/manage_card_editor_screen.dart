@@ -145,7 +145,7 @@ class _ManageCardEditorScreenState extends State<ManageCardEditorScreen> {
       setState(() {
         _error = error is CardOperationException
             ? error.message
-            : 'Không thể lưu thẻ. Vui lòng thử lại.';
+            : _strings.error('Không thể lưu thẻ. Vui lòng thử lại.');
       });
     } finally {
       if (mounted) setState(() => _saving = false);

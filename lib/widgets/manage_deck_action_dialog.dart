@@ -27,7 +27,11 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
     final controller = context.read<CardController>();
     if (controller.isSaving || controller.isLoading) return;
     if (widget.card != null && _target == null) {
-      setState(() => _error = 'Vui lòng chọn bộ nhận.');
+      setState(
+        () => _error = controller.isEnglish
+            ? 'Please select a destination deck.'
+            : 'Vui lòng chọn bộ nhận.',
+      );
       return;
     }
     setState(() {
@@ -49,9 +53,12 @@ class _ManageDeckActionDialogState extends State<ManageDeckActionDialog> {
       if (mounted) {
         setState(() {
           _saving = false;
+          final strings = AppStrings(controller.isEnglish);
           _error = error is CardOperationException
-              ? error.message
-              : 'Không thể lưu thay đổi. Vui lòng thử lại.';
+              ? strings.errorMessage(error.message)
+              : (controller.isEnglish
+                  ? 'Could not save changes. Please try again.'
+                  : 'Không thể lưu thay đổi. Vui lòng thử lại.');
         });
       }
     }

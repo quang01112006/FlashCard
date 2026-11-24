@@ -38,9 +38,12 @@ class _ManageDeleteCardDialogState extends State<ManageDeleteCardDialog> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
+        final strings = AppStrings(widget.controller.isEnglish);
         _error = error is CardOperationException
-            ? error.message
-            : 'Không thể xóa thẻ. Vui lòng thử lại.';
+            ? strings.errorMessage(error.message)
+            : (widget.controller.isEnglish
+                ? 'Could not delete card. Please try again.'
+                : 'Không thể xóa thẻ. Vui lòng thử lại.');
       });
     } finally {
       if (mounted) setState(() => _deleting = false);
