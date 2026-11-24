@@ -101,7 +101,7 @@ class WorkerAiCardService implements AiCardService {
           'level': request.level,
           'bilingual': request.bilingual,
         }),
-      ).timeout(const Duration(seconds: 55));
+      ).timeout(const Duration(seconds: 105));
       if (response.statusCode == 429) {
         throw const AiCardException(
           'Đã đạt giới hạn yêu cầu. Vui lòng chờ rồi thử lại.',
@@ -116,6 +116,9 @@ class WorkerAiCardService implements AiCardService {
           /* Phản hồi có thể là HTML từ cổng mạng. */
         }
         const messages = {
+          'providers_unavailable':
+              'Dịch vụ AI chưa thể tạo thẻ lúc này. Vui lòng thử lại sau.',
+          'provider_timeout': 'Kết nối AI quá lâu. Vui lòng thử lại.',
           'provider_unavailable': 'Gemini đang tạm thời quá tải hoặc không khả dụng. Hãy chờ một lúc rồi thử lại.',
           'provider_location_unsupported': 'Khu vực máy chủ AI hiện chưa được Gemini hỗ trợ. Cần kiểm tra vị trí dịch vụ.',
           'not_configured':

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +16,35 @@ import 'package:flashcard_sm2/services/ai_card_service.dart';
 import 'support/manage_deck_test_store.dart';
 
 void main() {
+  testWidgets('Accepts a valid AI response after the old 55 second limit', (
+    tester,
+  ) async {
+    final response = Completer<http.Response>();
+    final service = WorkerAiCardService(
+      endpoint: 'https://worker.example',
+      client: MockClient((_) => response.future),
+    );
+    var finished = false;
+    final generation = service
+        .generate(
+          const AiCardRequest(
+            topic: 'Dart',
+            count: 1,
+            level: 'Nhớ',
+            bilingual: false,
+          ),
+        )
+        .whenComplete(() => finished = true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 65));
+    expect(finished, isFalse);
+    response.complete(
+      http.Response('{"cards":[{"front":"Question","back":"Answer"}]}', 200),
+    );
+    await tester.pump();
+    expect((await generation).single.front, 'Question');
+  });
+
   testWidgets(
     'English AI flow supports dark theme, large text and live language changes',
     (tester) async {
@@ -229,6 +261,41 @@ void main() {
           ),
         ),
       );
+    },
+  );
+  test(
+    'Reports provider overload and timeout with actionable messages',
+    () async {
+      const request = AiCardRequest(
+        topic: 'Dart',
+        count: 1,
+        level: 'Nhớ',
+        bilingual: false,
+      );
+      const errors = {
+        'provider_unavailable': 'Gemini đang tạm thời quá tải hoặc không khả dụng. Hãy chờ một lúc rồi thử lại.',
+        'provider_timeout': 'Kết nối AI quá lâu. Vui lòng thử lại.',
+        'providers_unavailable':
+            'Dịch vụ AI chưa thể tạo thẻ lúc này. Vui lòng thử lại sau.',
+      };
+      for (final entry in errors.entries) {
+        final service = WorkerAiCardService(
+          endpoint: 'https://worker.example',
+          client: MockClient(
+            (_) async => http.Response(jsonEncode({'error': entry.key}), 502),
+          ),
+        );
+        await expectLater(
+          service.generate(request),
+          throwsA(
+            isA<AiCardException>().having(
+              (error) => error.message,
+              'message',
+              entry.value,
+            ),
+          ),
+        );
+      }
     },
   );
   test(
