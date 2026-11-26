@@ -94,11 +94,11 @@ screens/  →  widgets/  →  controllers/  →  services/  →  logic/ & models
 
 Toàn bộ dữ liệu học tập được lưu cục bộ trên máy bằng **Hive NoSQL**, hoạt động bình thường khi tắt mạng:
 
-| Hive Box       | Dữ liệu lưu trữ                                                                                                                                     |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flashcards`   | Nội dung câu hỏi/đáp án (Việt–Anh), chủ đề, mức độ Bloom, thông số SM-2 và ngày ôn tiếp theo.                                                       |
-| `decks`        | Danh sách các bộ thẻ (`id`, `name`, `description`).                                                                                                 |
-| `app_settings` | Trạng thái `isDarkMode`, `isEnglish`, `isReminderEnabled`, `reminderHour`, `reminderMinute` và danh sách ngày đã học `studied_dates` (tính Streak). |
+| Hive Box          | Dữ liệu lưu trữ                                                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manage_cards_v1` | Lưu trữ chính danh sách thẻ học (Việt–Anh, chủ đề, mức độ Bloom, thông số SM-2) và danh sách bộ thẻ (`HiveManageCardStore`).                       |
+| `flashcards_box`  | Kho lưu dữ liệu mặc định 300 thẻ nạp từ `assets/default_cards.json` (`StorageService`).                                                             |
+| `app_settings`    | Trạng thái `isDarkMode`, `isEnglish`, `isReminderEnabled`, `reminderHour`, `reminderMinute` và danh sách ngày đã học `studied_dates` (tính Streak). |
 
 ### 4.3. Quyền ứng dụng Android (`android/app/src/main/AndroidManifest.xml`)
 
