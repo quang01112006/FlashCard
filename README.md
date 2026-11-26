@@ -210,6 +210,6 @@ flutter build apk --release
 ## 9. Dùng AI
 
 - **Công cụ sử dụng:** Google Gemini / Antigravity.
-- **Phần được hỗ trợ:** Rà soát kiến trúc phân tầng, hoàn thiện lưu trữ `app_settings` và `studied_dates` vào Hive, đồng bộ chuỗi song ngữ Anh–Việt cho luồng CSV và `SnackBar`, hỗ trợ viết bổ sung unit/widget tests, cấu hình ký số Android an toàn và biên tập tài liệu.
+- **Phần được hỗ trợ:** Tư vấn chia cấu trúc thư mục dự án, chuẩn hóa thuật toán SM-2 & luồng Hoàn tác (Undo), cấu hình ký số APK Release an toàn cho nhóm, hỗ trợ kiểm thử (`flutter test`) và biên tập tài liệu.
 - **Kiểm chứng:** Toàn bộ mã nguồn được các thành viên tự kiểm tra, chạy thử trực tiếp trên thiết bị Android thật (`CPH2565`), xác minh qua `flutter analyze` và `flutter test`.
 - **Nhật ký hội thoại:** Các đoạn trao đổi kiến trúc, thuật toán và cấu hình ký số với AI được lưu tại [`docs/ai/`](docs/ai/).
