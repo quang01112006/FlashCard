@@ -57,7 +57,7 @@ node --test worker/test/index.test.js
 ```text
 Flashcard/
 ├── lib/
-│   ├── main.dart                     Mở Hive boxes, khởi tạo NotificationService & Provider
+│   ├── main.dart                     Khởi tạo Hive (`app_settings`) & gắn Provider (`CardController`)
 │   ├── core/app_theme.dart           Bảng màu và ThemeData (Sáng / Tối)
 │   ├── l10n/app_strings.dart         Bản dịch song ngữ Việt – Anh dùng chung
 │   ├── models/                       Mô hình dữ liệu thuần Dart (Flashcard, CardDeck)
